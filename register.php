@@ -1,0 +1,175 @@
+<?php
+include 'includes/db.php';
+session_start();
+
+$msg = "";
+$msgClass = "";
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $username = htmlspecialchars(trim($_POST['username']));
+    $email = filter_var(trim($_POST['email']), FILTER_VALIDATE_EMAIL);
+    $password = trim($_POST['password']);
+
+    if (!$email) {
+        $msg = "⚠️ Email inválido!";
+        $msgClass = "error";
+    } elseif (strlen($password) < 6) {
+        $msg = "⚠️ A senha deve ter pelo menos 6 caracteres!";
+        $msgClass = "error";
+    } else {
+        $check = $conn->prepare("SELECT id FROM users WHERE email = ?");
+        $check->bind_param("s", $email);
+        $check->execute();
+        $result = $check->get_result();
+
+        if ($result->num_rows > 0) {
+            $msg = "⚠️ Este email já está registado!";
+            $msgClass = "error";
+        } else {
+            $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+            $stmt = $conn->prepare("INSERT INTO users (username, email, password) VALUES (?, ?, ?)");
+            $stmt->bind_param("sss", $username, $email, $passwordHash);
+
+            if ($stmt->execute()) {
+                $user_id = $conn->insert_id;
+
+                $defaultLists = ["Favoritos", "Jogar mais tarde", "Jogos jogados"];
+                foreach ($defaultLists as $listName) {
+                    $createList = $conn->prepare("INSERT INTO lists (user_id, name) VALUES (?, ?)");
+                    $createList->bind_param("is", $user_id, $listName);
+                    $createList->execute();
+                }
+
+                $msg = "✅ Conta criada com sucesso! <a href='login.php'>Inicia sessão</a>";
+                $msgClass = "success";
+            } else {
+                $msg = "❌ Erro ao criar conta. Tente novamente mais tarde.";
+                $msgClass = "error";
+            }
+        }
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Registar - GameList</title>
+  <link rel="icon" type="image/png" href="img/logo.png">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+
+    body {
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #121212;
+      color: #e0e0e0;
+    }
+
+    .container {
+      background: #1e1e1e;
+      padding: 40px 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 30px;
+      font-size: 28px;
+      color: #ffffff;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 15px;
+      margin: 10px 0;
+      border: 1px solid #333;
+      border-radius: 10px;
+      background-color: #2a2a2a;
+      color: #e0e0e0;
+      font-size: 16px;
+      transition: 0.3s;
+    }
+
+    input::placeholder {
+      color: #aaaaaa;
+    }
+
+    input:focus {
+      border-color: #00b4ff;
+      outline: none;
+      box-shadow: 0 0 8px rgba(0,180,255,0.5);
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 15px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #fff;
+      background: linear-gradient(90deg, #00b4ff, #8a2be2);
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: linear-gradient(90deg, #8a2be2, #00b4ff);
+    }
+
+    .msg {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 14px;
+    }
+
+    .success {
+      background: #2e7d32;
+      color: #a5d6a7;
+      border: 1px solid #1b5e20;
+    }
+
+    .error {
+      background: #b71c1c;
+      color: #ff8a80;
+      border: 1px solid #7f0000;
+    }
+
+    p a {
+      color: #00b4ff;
+      text-decoration: none;
+      font-weight: 500;
+      transition: 0.2s;
+    }
+
+    p a:hover {
+      color: #8a2be2;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Cria a tua conta</h1>
+    <form method="POST">
+      <input type="text" name="username" placeholder="Nome de utilizador" required>
+      <input type="email" name="email" placeholder="Email" required>
+      <input type="password" name="password" placeholder="Palavra-passe" required>
+      <button type="submit">Registar</button>
+    </form>
+    <?php if($msg): ?>
+      <p class="msg <?php echo $msgClass; ?>"><?php echo $msg; ?></p>
+    <?php endif; ?>
+    <br>
+    <p>Já tens conta? <a href="login.php">Inicia sessão</a></p>
+  </div>
+</body>
+</html>
