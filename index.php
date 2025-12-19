@@ -146,8 +146,10 @@
         data.results.forEach(game => {
           const card = document.createElement('div');
           card.classList.add('game-card');
+          const nameParam = game.name ? `&name=${encodeURIComponent(game.name)}` : '';
+          const imageParam = game.background_image ? `&image=${encodeURIComponent(game.background_image)}` : '';
           card.innerHTML = `
-            <a href="game.php?id=${game.id}&name=${encodeURIComponent(game.name)}&image=${encodeURIComponent(game.background_image)}">
+            <a href="game.php?id=${game.id}${nameParam}${imageParam}">
               <img src="${game.background_image || 'https://via.placeholder.com/300x220?text=Sem+Imagem'}" alt="${game.name}">
               <p>${game.name}</p>
             </a>

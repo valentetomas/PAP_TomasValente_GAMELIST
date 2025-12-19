@@ -1,6 +1,6 @@
 <?php
 include 'includes/db.php';
-session_start();
+
 
 $msg = "";
 
@@ -17,10 +17,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $user = $result->fetch_assoc();
 
         if (password_verify($password, $user['password'])) {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['username'] = $user['username'];
-            header("Location: index.php");
-            exit();
+            if ($user['banned']) {
+                $msg = "❌ Conta banida. Contacta o administrador.";
+            } else {
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['role'] = $user['role'];
+                header("Location: index.php");
+                exit();
+            }
         } else {
             $msg = "❌ Palavra-passe incorreta.";
         }

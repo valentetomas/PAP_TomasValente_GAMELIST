@@ -1,6 +1,5 @@
 <?php
 include 'includes/db.php';
-session_start();
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
@@ -44,6 +43,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <title>Editar Review - GameList</title>
+    <link rel="icon" type="image/png" href="img/logo.png">
     <style>
         body { background:#111; color:#fff; font-family:Arial,sans-serif; padding:40px; }
         form { max-width:500px; margin:auto; background:#222; padding:20px; border-radius:10px; }

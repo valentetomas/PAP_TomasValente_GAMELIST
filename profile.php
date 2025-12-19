@@ -1,5 +1,4 @@
 <?php
-include 'includes/db.php';
 include 'includes/header.php';
 
 if (!isset($_SESSION['user_id'])) {
@@ -18,8 +17,8 @@ $reviews = $conn->query("SELECT * FROM reviews WHERE user_id = $user_id ORDER BY
 <head>
 <meta charset="UTF-8">
 <title>Perfil - GameList</title>
+<link rel="icon" type="image/png" href="img/logo.png">
 <link rel="stylesheet" href="css/style.css">
-<link rel="icon" type="image/png" href="/Pap_TomásValente_23/img/logo.png">
 <style>
     body { background:#111; color:#fff; font-family:Arial,sans-serif; margin:0; padding:0; overflow-x:hidden; }
     .container { padding:20px; max-width:1100px; margin:auto; }

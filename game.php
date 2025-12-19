@@ -1,5 +1,4 @@
 <?php
-include 'includes/db.php';
 include 'includes/header.php';
 
 if (!isset($_GET['id'])) {
@@ -27,15 +26,15 @@ if ($response) {
 $reviews = $conn->query("SELECT r.*, u.username 
                          FROM reviews r 
                          INNER JOIN users u ON r.user_id = u.id 
-                         WHERE r.game_id = $game_id
+                         WHERE r.game_id = $game_id AND r.approved = 1
                          ORDER BY r.created_at DESC");
 
 // Calcular média de rating
-$avg_rating = $conn->query("SELECT AVG(rating) as media FROM reviews WHERE game_id = $game_id")->fetch_assoc()['media'];
+$avg_rating = $conn->query("SELECT AVG(rating) as media FROM reviews WHERE game_id = $game_id AND approved = 1")->fetch_assoc()['media'];
 
 // Pega dados do jogo (vindo da RAWG via GET ou podes passar nome e imagem via URL)
-$game_name = isset($_GET['name']) ? $_GET['name'] : "Desconhecido";
-$game_image = isset($_GET['image']) ? $_GET['image'] : "https://via.placeholder.com/250x140?text=Sem+Imagem";
+$game_name = isset($_GET['name']) && !empty($_GET['name']) && $_GET['name'] !== 'null' ? urldecode($_GET['name']) : "Desconhecido";
+$game_image = isset($_GET['image']) && !empty($_GET['image']) && $_GET['image'] !== 'null' ? urldecode($_GET['image']) : "https://via.placeholder.com/250x140?text=Sem+Imagem";
 
 ?>
 <!DOCTYPE html>
@@ -43,8 +42,7 @@ $game_image = isset($_GET['image']) ? $_GET['image'] : "https://via.placeholder.
 <head>
     <meta charset="UTF-8">
     <title><?php echo $game_name; ?> - GameList</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="icon" type="image/png" href="/img/logo.png">
+    <link rel="icon" type="image/png" href="img/logo.png">
     <style>
         * {
             box-sizing: border-box;
@@ -263,6 +261,21 @@ $game_image = isset($_GET['image']) ? $_GET['image'] : "https://via.placeholder.
 
 </head>
 <body>
+    <?php if(isset($_SESSION['msg'])): ?>
+    <div style="background: #4CAF50; color: white; padding: 15px; text-align: center; font-weight: bold; position: fixed; top: 64px; left: 0; right: 0; z-index: 1000;">
+        <?php if($_SESSION['msg'] == 'added'): ?>
+        ✅ Jogo adicionado à lista com sucesso!
+        <?php elseif($_SESSION['msg'] == 'exists'): ?>
+        ⚠️ Este jogo já está na lista.
+        <?php endif; ?>
+    </div>
+    <script>
+        setTimeout(() => {
+            document.querySelector('div[style*="background: #4CAF50"]').style.display = 'none';
+        }, 3000);
+    </script>
+    <?php unset($_SESSION['msg']); ?>
+    <?php endif; ?>
     <div class="game-hero">
     <div class="hero-content">
         <div>
