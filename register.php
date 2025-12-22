@@ -155,8 +155,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       text-decoration: underline;
     }
   </style>
-</head>
-<body>
   <div class="container">
     <h1>Cria a tua conta</h1>
     <form method="POST">

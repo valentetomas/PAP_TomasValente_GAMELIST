@@ -1,3 +1,4 @@
+
 <?php
 // Ajuste do include do DB para funcionar no XAMPP
 include __DIR__ . '/db.php'; // assumindo que db.php está na mesma pasta que header.php ou ajuste o caminho
@@ -15,6 +16,9 @@ if (isset($_SESSION['user_id'])) {
     }
 }
 ?>
+<head>
+    <link rel="icon" type="image/png" href="img/logo.png">
+</head>
 
 <header class="main-header">
     <div class="header-inner">

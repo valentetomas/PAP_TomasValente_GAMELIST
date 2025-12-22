@@ -1,4 +1,4 @@
-<?php
+ <?php
 include 'includes/db.php';
 
 if (!isset($_SESSION['user_id'])) {
@@ -52,8 +52,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         button:hover { background:#0090cc; }
         a { color:#00bfff; text-decoration:none; }
     </style>
-</head>
-<body>
     <h1>Editar review de "<?php echo htmlspecialchars($review['game_name']); ?>"</h1>
     <form method="POST">
         <label>Nota (0-10):</label>

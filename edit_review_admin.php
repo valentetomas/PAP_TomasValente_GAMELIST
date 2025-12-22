@@ -48,8 +48,6 @@ include 'includes/header.php';
         button { margin-top: 20px; padding: 10px; background: #00bfff; color: #fff; border: none; cursor: pointer; }
         button:hover { background: #0080ff; }
     </style>
-</head>
-<body>
     <div class="container">
         <h1>Editar Review</h1>
         <p><strong>Jogo:</strong> <?php echo htmlspecialchars($review['game_name']); ?></p>

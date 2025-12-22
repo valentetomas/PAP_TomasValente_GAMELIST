@@ -149,8 +149,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       text-decoration: underline;
     }
   </style>
-</head>
-<body>
   <div class="container">
     <h1>Iniciar Sessão</h1>
     <form method="POST">

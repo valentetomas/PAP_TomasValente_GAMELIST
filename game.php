@@ -1,4 +1,4 @@
-<?php
+ <?php
 include 'includes/header.php';
 
 if (!isset($_GET['id'])) {
@@ -33,8 +33,33 @@ $reviews = $conn->query("SELECT r.*, u.username
 $avg_rating = $conn->query("SELECT AVG(rating) as media FROM reviews WHERE game_id = $game_id AND approved = 1")->fetch_assoc()['media'];
 
 // Pega dados do jogo (vindo da RAWG via GET ou podes passar nome e imagem via URL)
-$game_name = isset($_GET['name']) && !empty($_GET['name']) && $_GET['name'] !== 'null' ? urldecode($_GET['name']) : "Desconhecido";
-$game_image = isset($_GET['image']) && !empty($_GET['image']) && $_GET['image'] !== 'null' ? urldecode($_GET['image']) : "https://via.placeholder.com/250x140?text=Sem+Imagem";
+
+$game_name = null;
+$game_image = null;
+if (isset($_GET['name']) && !empty($_GET['name']) && $_GET['name'] !== 'null') {
+    $game_name = urldecode($_GET['name']);
+}
+if (isset($_GET['image']) && !empty($_GET['image']) && $_GET['image'] !== 'null') {
+    $game_image = urldecode($_GET['image']);
+}
+// Se não vierem por GET, buscar da API RAWG
+if (!$game_name || !$game_image) {
+    $ch = curl_init("https://api.rawg.io/api/games/$game_id?key=$api_key");
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $response = curl_exec($ch);
+    curl_close($ch);
+    if ($response) {
+        $data = json_decode($response, true);
+        if (!$game_name && isset($data['name'])) {
+            $game_name = $data['name'];
+        }
+        if (!$game_image && isset($data['background_image'])) {
+            $game_image = $data['background_image'];
+        }
+    }
+}
+if (!$game_name) $game_name = "Desconhecido";
+if (!$game_image) $game_image = "https://via.placeholder.com/250x140?text=Sem+Imagem";
 
 ?>
 <!DOCTYPE html>
@@ -258,8 +283,6 @@ $game_image = isset($_GET['image']) && !empty($_GET['image']) && $_GET['image'] 
         }
     }
     </style>
-
-</head>
 <body>
     <?php if(isset($_SESSION['msg'])): ?>
     <div style="background: #4CAF50; color: white; padding: 15px; text-align: center; font-weight: bold; position: fixed; top: 64px; left: 0; right: 0; z-index: 1000;">

@@ -190,8 +190,6 @@ $reviews = $conn->query("SELECT * FROM reviews WHERE user_id = $user_id ORDER BY
     button.remove-btn { background:#ff4444; border:none; padding:5px 10px; border-radius:6px; color:#fff; cursor:pointer; margin-top:5px; }
     button.remove-btn:hover { background:#cc0000; }
 </style>
-</head>
-<body>
 <div class="container">
 
     <!-- Banner -->

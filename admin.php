@@ -10,6 +10,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_role'])) {
     $new_role = $_POST['role'];
     $conn->query("UPDATE users SET role = '$new_role' WHERE id = $user_id");
     $conn->query("INSERT INTO admin_logs (admin_id, action, target_id, details) VALUES ({$_SESSION['user_id']}, 'update_role', $user_id, 'Role changed to $new_role')");
+    $_SESSION['feedback'] = "Role atualizado com sucesso.";
     header("Location: admin.php");
     exit;
 }
@@ -21,6 +22,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_ban'])) {
     $conn->query("UPDATE users SET banned = $new_banned WHERE id = $user_id");
     $action = $new_banned ? 'ban_user' : 'unban_user';
     $conn->query("INSERT INTO admin_logs (admin_id, action, target_id, details) VALUES ({$_SESSION['user_id']}, '$action', $user_id, 'User banned status changed')");
+    $_SESSION['feedback'] = $new_banned ? "Utilizador banido." : "Utilizador desbanido.";
     header("Location: admin.php");
     exit;
 }
@@ -39,6 +41,8 @@ if ($_SESSION['role'] != 'admin') {
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_review'])) {
     $review_id = intval($_POST['review_id']);
     $conn->query("DELETE FROM reviews WHERE id = $review_id");
+    $conn->query("INSERT INTO admin_logs (admin_id, action, target_id, details) VALUES ({$_SESSION['user_id']}, 'delete_review', $review_id, 'Review deletada')");
+    $_SESSION['feedback'] = "Review deletada.";
     header("Location: admin.php");
     exit;
 }
@@ -47,6 +51,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_review'])) {
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['approve_review'])) {
     $review_id = intval($_POST['review_id']);
     $conn->query("UPDATE reviews SET approved = 1 WHERE id = $review_id");
+    $conn->query("INSERT INTO admin_logs (admin_id, action, target_id, details) VALUES ({$_SESSION['user_id']}, 'approve_review', $review_id, 'Review aprovada')");
+    $_SESSION['feedback'] = "Review aprovada.";
     header("Location: admin.php");
     exit;
 }
@@ -54,6 +60,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['approve_review'])) {
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['reject_review'])) {
     $review_id = intval($_POST['review_id']);
     $conn->query("DELETE FROM reviews WHERE id = $review_id"); // Ou UPDATE approved = 0
+    $conn->query("INSERT INTO admin_logs (admin_id, action, target_id, details) VALUES ({$_SESSION['user_id']}, 'reject_review', $review_id, 'Review rejeitada/deletada')");
+    $_SESSION['feedback'] = "Review rejeitada/deletada.";
     header("Location: admin.php");
     exit;
 }
@@ -71,6 +79,8 @@ $top_games = $conn->query("SELECT game_name, COUNT(*) as count FROM reviews GROU
 // Listar reviews pendentes e aprovadas
 $pending_reviews = $conn->query("SELECT r.id, r.comment, r.rating, r.created_at, u.username, r.game_name FROM reviews r JOIN users u ON r.user_id = u.id WHERE r.approved = 0 ORDER BY r.created_at DESC");
 $approved_reviews = $conn->query("SELECT r.id, r.comment, r.rating, r.created_at, u.username, r.game_name FROM reviews r JOIN users u ON r.user_id = u.id WHERE r.approved = 1 ORDER BY r.created_at DESC");
+// Listar logs administrativos
+$admin_logs = $conn->query("SELECT l.*, a.username as admin_name FROM admin_logs l LEFT JOIN users a ON l.admin_id = a.id ORDER BY l.created_at DESC LIMIT 50");
 ?>
 <!DOCTYPE html>
 <html lang="pt">
@@ -79,18 +89,77 @@ $approved_reviews = $conn->query("SELECT r.id, r.comment, r.rating, r.created_at
     <title>Admin - GameList</title>
     <link rel="icon" type="image/png" href="img/logo.png">
     <link rel="stylesheet" href="css/style.css">
-    <style>
-        body { background: #111; color: #fff; font-family: Arial, sans-serif; padding-top: 64px; }
-        .container { max-width: 1200px; margin: 20px auto; padding: 20px; }
-        table { width: 100%; border-collapse: collapse; background: #222; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #444; }
-        th { background: #333; }
-        .btn { padding: 5px 10px; background: #00bfff; color: #fff; border: none; cursor: pointer; }
-        .btn:hover { background: #0080ff; }
-    </style>
+        <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #222;
+            margin-bottom: 24px;
+        }
+        th, td {
+            padding: 12px 10px;
+            border: 1px solid #333;
+            text-align: left;
+            color: #eee;
+            font-size: 1rem;
+        }
+        th {
+            background: #111;
+            color: #00bfff;
+            font-weight: bold;
+            font-size: 1.08rem;
+        }
+        tr:nth-child(even) {
+            background: #282828;
+        }
+        tr:hover td {
+            background: #181818;
+        }
+        .btn {
+            padding: 7px 16px;
+            border-radius: 6px;
+            border: none;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0 2px;
+            transition: background 0.2s;
+        }
+        </style>
 </head>
 <body>
-    <div class="container">
+    <?php if (isset($_SESSION['feedback'])): ?>
+        <script>
+            window.addEventListener('DOMContentLoaded', function() {
+                var notif = document.createElement('div');
+                notif.innerText = <?php echo json_encode($_SESSION['feedback']); ?>;
+                notif.style.position = 'fixed';
+                notif.style.top = '90px';
+                notif.style.left = '50%';
+                notif.style.transform = 'translateX(-50%)';
+                notif.style.background = 'linear-gradient(90deg, #00bfff 0%, #0080ff 100%)';
+                notif.style.color = '#fff';
+                notif.style.padding = '16px 32px';
+                notif.style.borderRadius = '8px';
+                notif.style.boxShadow = '0 4px 16px rgba(0,0,0,0.2)';
+                notif.style.fontSize = '1.1rem';
+                notif.style.zIndex = '9999';
+                notif.style.fontWeight = 'bold';
+                notif.style.letterSpacing = '0.5px';
+                notif.style.opacity = '0.95';
+                document.body.appendChild(notif);
+                setTimeout(function() {
+                    notif.style.transition = 'opacity 0.5s';
+                    notif.style.opacity = '0';
+                    setTimeout(function() { notif.remove(); }, 500);
+                }, 3000);
+            });
+        </script>
+        <?php unset($_SESSION['feedback']); ?>
+    <?php endif; ?>
+    <br>
+    <div class="container" style="max-width:1200px; margin:0 auto;">
         <h1>Painel de Administração</h1>
         <div style="display: flex; gap: 20px; margin-bottom: 20px;">
             <div style="background: #333; padding: 15px; border-radius: 8px; flex: 1;">
@@ -110,8 +179,11 @@ $approved_reviews = $conn->query("SELECT r.id, r.comment, r.rating, r.created_at
                 </ul>
             </div>
         </div>
-        <h2>Gerenciar Usuários</h2>
-        <table>
+    </div>
+        <div style="max-width:1200px; margin:0 auto;">
+            <h2>Gerenciar Usuários</h2>
+            <div class="admin-table-container">
+            <table>
             <tr>
                 <th>ID</th>
                 <th>Username</th>
@@ -130,7 +202,7 @@ $approved_reviews = $conn->query("SELECT r.id, r.comment, r.rating, r.created_at
                 <td><?php echo $user['banned'] ? 'Banido' : 'Ativo'; ?></td>
                 <td><?php echo $user['created_at']; ?></td>
                 <td>
-                    <form method="POST" style="display:inline;">
+                    <form method="POST" style="display:inline;" onsubmit="return confirm('Tem certeza que quer atualizar o role deste usuário?')">
                         <input type="hidden" name="user_id" value="<?php echo $user['id']; ?>">
                         <select name="role">
                             <option value="user" <?php if($user['role']=='user') echo 'selected'; ?>>User</option>
@@ -138,7 +210,7 @@ $approved_reviews = $conn->query("SELECT r.id, r.comment, r.rating, r.created_at
                         </select>
                         <button type="submit" name="update_role" class="btn">Atualizar</button>
                     </form>
-                    <form method="POST" style="display:inline; margin-left: 10px;">
+                    <form method="POST" style="display:inline; margin-left: 10px;" onsubmit="return confirm('<?php echo $user['banned'] ? 'Desbanir' : 'Banir'; ?> este usuário?')">
                         <input type="hidden" name="user_id" value="<?php echo $user['id']; ?>">
                         <button type="submit" name="toggle_ban" class="btn" style="background: <?php echo $user['banned'] ? '#4caf50' : '#f44336'; ?>;">
                             <?php echo $user['banned'] ? 'Desbanir' : 'Banir'; ?>
@@ -152,6 +224,7 @@ $approved_reviews = $conn->query("SELECT r.id, r.comment, r.rating, r.created_at
 
     <div class="container">
         <h2>Gerenciar Reviews Pendentes</h2>
+        <div class="admin-table-container">
         <table>
             <tr>
                 <th>ID</th>
@@ -187,6 +260,7 @@ $approved_reviews = $conn->query("SELECT r.id, r.comment, r.rating, r.created_at
 
     <div class="container">
         <h2>Gerenciar Reviews Aprovadas</h2>
+        <div class="admin-table-container">
         <table>
             <tr>
                 <th>ID</th>
@@ -215,4 +289,32 @@ $approved_reviews = $conn->query("SELECT r.id, r.comment, r.rating, r.created_at
             </tr>
             <?php endwhile; ?>
         </table>
+
+         <div class="container" style="max-width:1200px; margin:0 auto;">
+        <h2>Logs Administrativos</h2>
+        <div class="admin-table-container">
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Admin</th>
+                <th>Ação</th>
+                <th>Target ID</th>
+                <th>Detalhes</th>
+                <th>Data</th>
+            </tr>
+            <?php 
+            // Reexecutar a query para garantir que os dados não foram consumidos antes
+            $admin_logs = $conn->query("SELECT l.*, a.username as admin_name FROM admin_logs l LEFT JOIN users a ON l.admin_id = a.id ORDER BY l.created_at DESC LIMIT 50");
+            while ($log = $admin_logs->fetch_assoc()): ?>
+            <tr>
+                <td><?php echo $log['id']; ?></td>
+                <td><?php echo htmlspecialchars($log['admin_name']); ?></td>
+                <td><?php echo htmlspecialchars($log['action']); ?></td>
+                <td><?php echo $log['target_id']; ?></td>
+                <td><?php echo htmlspecialchars($log['details']); ?></td>
+                <td><?php echo $log['created_at']; ?></td>
+            </tr>
+            <?php endwhile; ?>
+        </table>
+    </div>
     </div>
