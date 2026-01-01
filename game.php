@@ -66,6 +66,7 @@ if (!$game_image) $game_image = "https://via.placeholder.com/250x140?text=Sem+Im
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $game_name; ?> - GameList</title>
     <link rel="icon" type="image/png" href="img/logo.png">
     <style>
@@ -411,3 +412,4 @@ function scrollScreenshots(direction) {
 </script>
 </body>
 </html>
+<?php include 'includes/footer.php'; ?>

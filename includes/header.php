@@ -16,9 +16,6 @@ if (isset($_SESSION['user_id'])) {
     }
 }
 ?>
-<head>
-    <link rel="icon" type="image/png" href="img/logo.png">
-</head>
 
 <header class="main-header">
     <div class="header-inner">
@@ -41,6 +38,7 @@ if (isset($_SESSION['user_id'])) {
         <nav class="nav" aria-label="Menu principal">
             <ul class="nav-links">
                 <li><a href="index.php">Início</a></li>
+                <li><a href="upcoming.php">Próximos Lançamentos</a></li>
             </ul>
 
             <div class="account">

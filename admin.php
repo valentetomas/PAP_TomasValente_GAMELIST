@@ -128,7 +128,8 @@ $admin_logs = $conn->query("SELECT l.*, a.username as admin_name FROM admin_logs
         }
         </style>
 </head>
-<body>
+<body class="layout">
+    <main class="content">
     <?php if (isset($_SESSION['feedback'])): ?>
         <script>
             window.addEventListener('DOMContentLoaded', function() {
@@ -293,28 +294,39 @@ $admin_logs = $conn->query("SELECT l.*, a.username as admin_name FROM admin_logs
          <div class="container" style="max-width:1200px; margin:0 auto;">
         <h2>Logs Administrativos</h2>
         <div class="admin-table-container">
-        <table>
-            <tr>
-                <th>ID</th>
-                <th>Admin</th>
-                <th>Ação</th>
-                <th>Target ID</th>
-                <th>Detalhes</th>
-                <th>Data</th>
-            </tr>
-            <?php 
-            // Reexecutar a query para garantir que os dados não foram consumidos antes
-            $admin_logs = $conn->query("SELECT l.*, a.username as admin_name FROM admin_logs l LEFT JOIN users a ON l.admin_id = a.id ORDER BY l.created_at DESC LIMIT 50");
-            while ($log = $admin_logs->fetch_assoc()): ?>
-            <tr>
-                <td><?php echo $log['id']; ?></td>
-                <td><?php echo htmlspecialchars($log['admin_name']); ?></td>
-                <td><?php echo htmlspecialchars($log['action']); ?></td>
-                <td><?php echo $log['target_id']; ?></td>
-                <td><?php echo htmlspecialchars($log['details']); ?></td>
-                <td><?php echo $log['created_at']; ?></td>
-            </tr>
-            <?php endwhile; ?>
-        </table>
-    </div>
-    </div>
+            <table>
+                <tr>
+                    <th>ID</th>
+                    <th>Admin</th>
+                    <th>Ação</th>
+                    <th>Target ID</th>
+                    <th>Detalhes</th>
+                    <th>Data</th>
+                </tr>
+                <?php 
+                $admin_logs = $conn->query("
+                    SELECT l.*, a.username as admin_name 
+                    FROM admin_logs l 
+                    LEFT JOIN users a ON l.admin_id = a.id 
+                    ORDER BY l.created_at DESC 
+                    LIMIT 50
+                ");
+                while ($log = $admin_logs->fetch_assoc()): ?>
+                <tr>
+                    <td><?php echo $log['id']; ?></td>
+                    <td><?php echo htmlspecialchars($log['admin_name']); ?></td>
+                    <td><?php echo htmlspecialchars($log['action']); ?></td>
+                    <td><?php echo $log['target_id']; ?></td>
+                    <td><?php echo htmlspecialchars($log['details']); ?></td>
+                    <td><?php echo $log['created_at']; ?></td>
+                </tr>
+                <?php endwhile; ?>
+            </table>
+        </div>
+    </div> <!-- FIM container Logs -->
+
+</main>
+ <?php include 'includes/footer.php'; ?>
+
+</body>
+</html>

@@ -1,3 +1,6 @@
+<?php
+include 'includes/header.php';
+?>
 <!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -182,7 +185,6 @@
 </head>
 
 <body>
-  <?php include 'includes/header.php'; ?>
 
   <div id="carousel" style="max-width:1200px;margin:40px auto 0 auto;position:relative;">
     <div id="carousel-inner" style="overflow:hidden;border-radius:16px;">
@@ -234,16 +236,12 @@
     <section id="upcoming-games" style="margin-bottom:40px;">
       <h2 style="color:#00bfff;text-align:center;margin-bottom:18px;">Próximos Lançamentos</h2>
       <div id="upcoming-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:20px;"></div>
+      <div style="text-align:center;margin-top:24px;">
+        <a href="upcoming.php" class="btn" style="display:inline-block;padding:12px 32px;background:linear-gradient(90deg,#00bfff,#0080ff);color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;transition:transform 0.2s;">Ver Mais Lançamentos</a>
+      </div>
     </section>
 
-    <div class="search-bar">
-      <input type="text" id="search" placeholder="Procura um jogo...">
-      <button onclick="searchGame()">Procurar</button>
-    </div>
-
-    <div id="results">
-      <!-- Resultados da pesquisa aparecem aqui -->
-    </div>
+    
   </main>
 
   <script>
@@ -308,26 +306,35 @@ setInterval(function() {
   }
 }, 4000);
 
-// Carregar jogos em destaque (populares)
+// Carregar jogos em destaque (melhores avaliados no Metacritic)
 async function loadFeaturedGames() {
   const featuredDiv = document.getElementById('featured-list');
   featuredDiv.innerHTML = '<p style="text-align:center;color:#aaa;">A carregar...</p>';
   try {
-    const popularRes = await fetch(`https://api.rawg.io/api/games?key=${apiKey}&ordering=-rating&page_size=6`);
-    const popularData = await popularRes.json();
+    const res = await fetch(`https://api.rawg.io/api/games?key=${apiKey}&ordering=-metacritic&page_size=15`);
+    const data = await res.json();
     featuredDiv.innerHTML = '';
-    popularData.results.forEach(game => {
+    
+    // Filtrar jogos com Metacritic >= 85 E que tenham imagem
+    const filtered = data.results.filter(game => 
+      game.metacritic && 
+      game.metacritic >= 85 && 
+      game.background_image
+    ).slice(0, 6);
+    
+    filtered.forEach(game => {
       const card = document.createElement('div');
       card.classList.add('game-card');
       card.innerHTML = `
         <a href="game.php?id=${game.id}">
-          <img src="${game.background_image || 'https://via.placeholder.com/300x220?text=Sem+Imagem'}" alt="${game.name}">
+          <img src="${game.background_image}" alt="${game.name}">
           <p>${game.name}</p>
         </a>
       `;
       featuredDiv.appendChild(card);
     });
   } catch (err) {
+    console.error('Erro:', err);
     featuredDiv.innerHTML = '<p style="text-align:center;color:#ff4444;">Erro ao carregar jogos em destaque.</p>';
   }
 }
@@ -438,8 +445,11 @@ async function applyFilters(forceLoad=false) {
 window.addEventListener('DOMContentLoaded', () => {
   loadCarousel();
   loadFilters();
-  applyFilters(true);
+  loadFeaturedGames();
+  loadUpcomingGames();
 });
   </script>
+
+  <?php include 'includes/footer.php'; ?>
 </body>
 </html>
