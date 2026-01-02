@@ -1,6 +1,6 @@
 <?php
 include 'includes/db.php';
-
+require 'includes/email_helper.php';
 
 $msg = "";
 $msgClass = "";
@@ -26,13 +26,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $msg = "⚠️ Este email já está registado!";
             $msgClass = "error";
         } else {
+            // Gera token de verificação
+            $verificationToken = bin2hex(random_bytes(32));
+            
             $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $conn->prepare("INSERT INTO users (username, email, password) VALUES (?, ?, ?)");
-            $stmt->bind_param("sss", $username, $email, $passwordHash);
+            $stmt = $conn->prepare("INSERT INTO users (username, email, password, verification_token, email_verified) VALUES (?, ?, ?, ?, 0)");
+            $stmt->bind_param("ssss", $username, $email, $passwordHash, $verificationToken);
 
             if ($stmt->execute()) {
                 $user_id = $conn->insert_id;
 
+                // Cria listas padrão
                 $defaultLists = ["Favoritos", "Jogar mais tarde", "Jogos jogados"];
                 foreach ($defaultLists as $listName) {
                     $createList = $conn->prepare("INSERT INTO lists (user_id, name) VALUES (?, ?)");
@@ -40,8 +44,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $createList->execute();
                 }
 
-                $msg = "✅ Conta criada com sucesso! <a href='login.php'>Inicia sessão</a>";
-                $msgClass = "success";
+                // Envia email de verificação
+                if (sendVerificationEmail($email, $username, $verificationToken)) {
+                    $msg = "✅ Conta criada! Verifica o teu email para ativar a conta.";
+                    $msgClass = "success";
+                } else {
+                    $msg = "⚠️ Conta criada, mas houve erro ao enviar email de verificação. <a href='login.php'>Tentar login</a>";
+                    $msgClass = "warning";
+                }
             } else {
                 $msg = "❌ Erro ao criar conta. Tente novamente mais tarde.";
                 $msgClass = "error";
@@ -53,10 +63,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8">
-  <title>Registar - GameList</title>
-  <link rel="icon" type="image/png" href="img/logo.png">
-  <style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" sizes="32x32" href="img/logo.png">
+<link rel="icon" type="image/png" sizes="16x16" href="img/logo.png">
+<link rel="shortcut icon" href="img/logo.png">
+<title>Registar - GameList</title>
+</head>
+<body>
+<style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
 
     body {

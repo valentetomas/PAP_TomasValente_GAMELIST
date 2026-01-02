@@ -1,4 +1,12 @@
-
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" sizes="32x32" href="img/logo.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="img/logo.png">
+    <link rel="shortcut icon" href="img/logo.png">
+    <link rel="stylesheet" href="css/style.css">
 <?php
 // Ajuste do include do DB para funcionar no XAMPP
 include __DIR__ . '/db.php'; // assumindo que db.php está na mesma pasta que header.php ou ajuste o caminho

@@ -39,12 +39,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 ?>
 <!DOCTYPE html>
-<html lang="pt">
-<head>
-    <meta charset="UTF-8">
-    <title>Editar Review - GameList</title>
-    <link rel="icon" type="image/png" href="img/logo.png">
-    <style>
+<title>Editar Review - GameList</title>
+</head>
+<body>
+<style>
         body { background:#111; color:#fff; font-family:Arial,sans-serif; padding:40px; }
         form { max-width:500px; margin:auto; background:#222; padding:20px; border-radius:10px; }
         input, textarea { width:100%; margin-bottom:10px; padding:8px; border-radius:6px; border:none; }

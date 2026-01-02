@@ -83,12 +83,9 @@ $approved_reviews = $conn->query("SELECT r.id, r.comment, r.rating, r.created_at
 $admin_logs = $conn->query("SELECT l.*, a.username as admin_name FROM admin_logs l LEFT JOIN users a ON l.admin_id = a.id ORDER BY l.created_at DESC LIMIT 50");
 ?>
 <!DOCTYPE html>
-<html lang="pt">
-<head>
-    <meta charset="UTF-8">
-    <title>Admin - GameList</title>
-    <link rel="icon" type="image/png" href="img/logo.png">
-    <link rel="stylesheet" href="css/style.css">
+<title>Admin - GameList</title>
+</head>
+<body>
         <style>
         table {
             width: 100%;

@@ -17,7 +17,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $user = $result->fetch_assoc();
 
         if (password_verify($password, $user['password'])) {
-            if ($user['banned']) {
+            // Verifica se o email foi verificado
+            if ($user['email_verified'] == 0) {
+                $msg = "⚠️ Precisas verificar o teu email antes de fazer login. Verifica a tua caixa de entrada.";
+            } elseif ($user['banned']) {
                 $msg = "❌ Conta banida. Contacta o administrador.";
             } else {
                 $_SESSION['user_id'] = $user['id'];
@@ -37,10 +40,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8">
-  <title>Login - GameList</title>
-  <link rel="icon" type="image/png" href="img/logo.png">
-  <style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" sizes="32x32" href="img/logo.png">
+<link rel="icon" type="image/png" sizes="16x16" href="img/logo.png">
+<link rel="shortcut icon" href="img/logo.png">
+<title>Login - GameList</title>
+</head>
+<body>
+<style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
 
     body {
@@ -163,6 +171,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       <p class="msg"><?php echo $msg; ?></p>
     <?php endif; ?>
     <br>
+    <p style="text-align: center; margin-bottom: 10px;"><a href="forgot_password.php" style="color: #00bfff; text-decoration: none;">Esqueceste-te da password?</a></p>
     <p>Não tens conta? <a href="register.php">Regista-te</a></p>
   </div>
 

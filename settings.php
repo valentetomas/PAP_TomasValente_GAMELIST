@@ -3,6 +3,7 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 include 'includes/db.php';
+require 'includes/email_helper.php';
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
@@ -39,7 +40,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['change_password'])) {
     }
 }
 
-// Mudar email
+// Mudar email (com verificação)
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['change_email'])) {
     $new_email = trim($_POST['new_email']);
     
@@ -48,10 +49,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['change_email'])) {
     } elseif ($conn->query("SELECT id FROM users WHERE email = '$new_email' AND id != $user_id")->num_rows > 0) {
         $error = "Este email já está registado.";
     } else {
-        $conn->query("UPDATE users SET email = '$new_email' WHERE id = $user_id");
-        $feedback = "Email alterado com sucesso!";
-        // Recarregar dados do utilizador
-        $user = $conn->query("SELECT * FROM users WHERE id = $user_id")->fetch_assoc();
+        // Gera token e guarda o email pendente
+        $emailChangeToken = bin2hex(random_bytes(32));
+        
+        $stmt = $conn->prepare("UPDATE users SET pending_email = ?, email_change_token = ? WHERE id = ?");
+        $stmt->bind_param("ssi", $new_email, $emailChangeToken, $user_id);
+        
+        if ($stmt->execute()) {
+            // Envia email de verificação para o novo email
+            if (sendEmailChangeVerification($new_email, $user['username'], $emailChangeToken)) {
+                $feedback = "Email de verificação enviado para $new_email. Verifica a tua caixa de entrada.";
+            } else {
+                $error = "Erro ao enviar email de verificação. Tenta novamente.";
+            }
+        } else {
+            $error = "Erro ao processar pedido.";
+        }
     }
 }
 
@@ -125,16 +138,11 @@ include 'includes/header.php';
 // Re-carregar $user antes de usar no HTML (para garantir que tem todos os dados)
 $user = $conn->query("SELECT * FROM users WHERE id = $user_id")->fetch_assoc();
 ?>
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Definições - GameList</title>
-    <link rel="icon" type="image/png" href="img/logo.png">
-    <link rel="stylesheet" href="css/style.css">
-    <style>
-        body {
+<title>Definições - GameList</title>
+</head>
+<body>
+<style>
+    body {
             background: linear-gradient(180deg, #0b0b0b, #151515);
             color: #eee;
             font-family: 'Segoe UI', Tahoma, sans-serif;

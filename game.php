@@ -62,14 +62,10 @@ if (!$game_name) $game_name = "Desconhecido";
 if (!$game_image) $game_image = "https://via.placeholder.com/250x140?text=Sem+Imagem";
 
 ?>
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $game_name; ?> - GameList</title>
-    <link rel="icon" type="image/png" href="img/logo.png">
-    <style>
+<title><?php echo $game_name; ?> - GameList</title>
+</head>
+<body>
+<style>
         * {
             box-sizing: border-box;
         }

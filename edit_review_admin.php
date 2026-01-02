@@ -33,12 +33,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 include 'includes/header.php';
 ?>
 <!DOCTYPE html>
-<html lang="pt">
-<head>
-    <meta charset="UTF-8">
-    <title>Editar Review - Admin</title>
-    <link rel="icon" type="image/png" href="img/logo.png">
-    <link rel="stylesheet" href="css/style.css">
+<title>Editar Review - Admin</title>
+</head>
+<body>
     <style>
         body { background: #111; color: #fff; font-family: Arial, sans-serif; padding-top: 64px; }
         .container { max-width: 600px; margin: 20px auto; padding: 20px; background: #222; border-radius: 8px; }

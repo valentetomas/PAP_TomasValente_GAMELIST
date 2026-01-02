@@ -4,15 +4,10 @@ if (session_status() == PHP_SESSION_NONE) {
 }
 include 'includes/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Próximos Lançamentos - GameList</title>
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="icon" type="image/png" href="img/logo.png">
-  <style>
+<title>Próximos Lançamentos - GameList</title>
+</head>
+<body>
+<style>
     body {
       margin: 0;
       font-family: 'Segoe UI', Tahoma, sans-serif;

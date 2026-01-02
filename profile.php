@@ -13,14 +13,9 @@ $user = $conn->query("SELECT * FROM users WHERE id = $user_id")->fetch_assoc();
 $lists = $conn->query("SELECT * FROM lists WHERE user_id = $user_id ORDER BY created_at DESC");
 $reviews = $conn->query("SELECT * FROM reviews WHERE user_id = $user_id ORDER BY created_at DESC");
 ?>
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Perfil - GameList</title>
-<link rel="icon" type="image/png" href="img/logo.png">
-<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
