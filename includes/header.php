@@ -192,15 +192,59 @@ if (isset($_SESSION['user_id'])) {
     z-index: 1000;
 }
 
-.search-suggestions div {
+.search-suggestions .search-section-title {
     padding: 8px 12px;
-    color: var(--muted);
-    cursor: pointer;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent1);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: rgba(0,180,255,0.05);
+    cursor: default;
 }
 
-.search-suggestions div:hover {
+.search-suggestions .search-result-item {
+    padding: 10px 12px;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s;
+}
+
+.search-suggestions .search-result-item:hover {
     background: rgba(255,255,255,0.05);
     color: var(--text);
+}
+
+.search-suggestions .search-result-item img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255,255,255,0.1);
+}
+
+.search-suggestions .search-result-item .result-info {
+    flex: 1;
+}
+
+.search-suggestions .search-result-item .result-name {
+    font-weight: 600;
+    color: var(--text);
+}
+
+.search-suggestions .search-result-item .result-meta {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.search-suggestions .no-results {
+    padding: 12px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
 }
 
 /* Navigation */
@@ -415,7 +459,7 @@ body {
         }
     });
 
-    // Pesquisa RAWG
+    // Pesquisa combinada (RAWG + Utilizadores)
     if(searchInput && searchResults){
         const RAWG_KEY = '5fd330b526034329a8f0d9b6676241c5';
         let timeout;
@@ -426,28 +470,81 @@ body {
 
             timeout = setTimeout(async () => {
                 try{
-                    const res = await fetch(`https://api.rawg.io/api/games?key=${RAWG_KEY}&search=${encodeURIComponent(query)}&page_size=5`);
-                    const data = await res.json();
+                    // Pesquisar jogos e utilizadores em paralelo
+                    const [gamesRes, usersRes] = await Promise.all([
+                        fetch(`https://api.rawg.io/api/games?key=${RAWG_KEY}&search=${encodeURIComponent(query)}&page_size=5`),
+                        fetch(`search_users.php?q=${encodeURIComponent(query)}`)
+                    ]);
+
+                    const gamesData = await gamesRes.json();
+                    const usersData = await usersRes.json();
 
                     searchResults.innerHTML = '';
-                    if(!data.results || data.results.length === 0){
-                        searchResults.style.display = 'none';
-                        return;
+                    
+                    let hasResults = false;
+
+                    // Mostrar utilizadores
+                    if(usersData.success && usersData.users && usersData.users.length > 0){
+                        hasResults = true;
+                        const userTitle = document.createElement('div');
+                        userTitle.className = 'search-section-title';
+                        userTitle.textContent = 'Utilizadores';
+                        searchResults.appendChild(userTitle);
+
+                        usersData.users.forEach(user => {
+                            const div = document.createElement('div');
+                            div.className = 'search-result-item';
+                            div.innerHTML = `
+                                <img src="${user.avatar || 'https://via.placeholder.com/40?text=U'}" alt="${user.username}">
+                                <div class="result-info">
+                                    <div class="result-name">${user.username}</div>
+                                    <div class="result-meta">${user.follower_count || 0} seguidores</div>
+                                </div>
+                            `;
+                            div.addEventListener('click', () => {
+                                window.location.href = `user_profile.php?id=${user.id}`;
+                            });
+                            searchResults.appendChild(div);
+                        });
                     }
 
-                    data.results.forEach(game => {
-                        const div = document.createElement('div');
-                        div.textContent = game.name;
-                        div.addEventListener('click', () => {
-                            const nameParam = game.name ? `&name=${encodeURIComponent(game.name)}` : '';
-                            const imageParam = game.background_image ? `&image=${encodeURIComponent(game.background_image)}` : '';
-                            window.location.href = `game.php?id=${game.id}${nameParam}${imageParam}`;
+                    // Mostrar jogos
+                    if(gamesData.results && gamesData.results.length > 0){
+                        hasResults = true;
+                        const gameTitle = document.createElement('div');
+                        gameTitle.className = 'search-section-title';
+                        gameTitle.textContent = 'Jogos';
+                        searchResults.appendChild(gameTitle);
+
+                        gamesData.results.forEach(game => {
+                            const div = document.createElement('div');
+                            div.className = 'search-result-item';
+                            div.innerHTML = `
+                                <img src="${game.background_image || 'https://via.placeholder.com/40?text=Game'}" alt="${game.name}" style="border-radius: 6px;">
+                                <div class="result-info">
+                                    <div class="result-name">${game.name}</div>
+                                    <div class="result-meta">${game.released || 'Data desconhecida'}</div>
+                                </div>
+                            `;
+                            div.addEventListener('click', () => {
+                                const nameParam = game.name ? `&name=${encodeURIComponent(game.name)}` : '';
+                                const imageParam = game.background_image ? `&image=${encodeURIComponent(game.background_image)}` : '';
+                                window.location.href = `game.php?id=${game.id}${nameParam}${imageParam}`;
+                            });
+                            searchResults.appendChild(div);
                         });
-                        searchResults.appendChild(div);
-                    });
+                    }
+
+                    if(!hasResults){
+                        const noResults = document.createElement('div');
+                        noResults.className = 'no-results';
+                        noResults.textContent = 'Nenhum resultado encontrado';
+                        searchResults.appendChild(noResults);
+                    }
+
                     searchResults.style.display = 'flex';
                 } catch(err){
-                    console.error('Erro na pesquisa RAWG:', err);
+                    console.error('Erro na pesquisa:', err);
                 }
             }, 300);
         });

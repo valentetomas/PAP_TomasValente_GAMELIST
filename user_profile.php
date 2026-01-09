@@ -2,55 +2,87 @@
 include 'includes/header.php';
 require_once 'includes/achievements.php';
 
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
+// Obter ID do utilizador da URL
+$profile_user_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+
+if ($profile_user_id <= 0) {
+    header("Location: index.php");
     exit;
 }
 
-$user_id = $_SESSION['user_id'];
-
 // Buscar dados do utilizador com prepared statement
-$stmt = $conn->prepare("SELECT id, username, avatar, banner, email, created_at, biography, social_links FROM users WHERE id = ?");
-$stmt->bind_param("i", $user_id);
+$stmt = $conn->prepare("SELECT id, username, avatar, banner, created_at, banned, biography, social_links FROM users WHERE id = ?");
+$stmt->bind_param("i", $profile_user_id);
 $stmt->execute();
-$user = $stmt->get_result()->fetch_assoc();
+$result = $stmt->get_result();
+
+if ($result->num_rows === 0) {
+    echo "Utilizador não encontrado.";
+    exit;
+}
+
+$profile_user = $result->fetch_assoc();
+
+// Verificar se está banido
+if ($profile_user['banned']) {
+    echo "Este utilizador foi banido.";
+    exit;
+}
+
+// Verificar se é o próprio perfil
+$is_own_profile = isset($_SESSION['user_id']) && $_SESSION['user_id'] == $profile_user_id;
+
+if ($is_own_profile) {
+    header("Location: profile.php");
+    exit;
+}
 
 // Estatísticas
 $stmt = $conn->prepare("SELECT COUNT(*) as count FROM lists WHERE user_id = ?");
-$stmt->bind_param("i", $user_id);
+$stmt->bind_param("i", $profile_user_id);
 $stmt->execute();
 $lists_count = $stmt->get_result()->fetch_assoc()['count'];
 
-$stmt = $conn->prepare("SELECT COUNT(*) as count FROM reviews WHERE user_id = ?");
-$stmt->bind_param("i", $user_id);
+$stmt = $conn->prepare("SELECT COUNT(*) as count FROM reviews WHERE user_id = ? AND approved = 1");
+$stmt->bind_param("i", $profile_user_id);
 $stmt->execute();
 $reviews_count = $stmt->get_result()->fetch_assoc()['count'];
 
 $stmt = $conn->prepare("SELECT COUNT(*) as count FROM follows WHERE following_id = ?");
-$stmt->bind_param("i", $user_id);
+$stmt->bind_param("i", $profile_user_id);
 $stmt->execute();
 $followers_count = $stmt->get_result()->fetch_assoc()['count'];
 
 $stmt = $conn->prepare("SELECT COUNT(*) as count FROM follows WHERE follower_id = ?");
-$stmt->bind_param("i", $user_id);
+$stmt->bind_param("i", $profile_user_id);
 $stmt->execute();
 $following_count = $stmt->get_result()->fetch_assoc()['count'];
 
-// Buscar listas
+// Verificar se já segue este utilizador
+$is_following = false;
+if (isset($_SESSION['user_id'])) {
+    $current_user_id = (int)$_SESSION['user_id'];
+    $stmt = $conn->prepare("SELECT id FROM follows WHERE follower_id = ? AND following_id = ?");
+    $stmt->bind_param("ii", $current_user_id, $profile_user_id);
+    $stmt->execute();
+    $is_following = $stmt->get_result()->num_rows > 0;
+}
+
+// Buscar listas públicas
 $stmt = $conn->prepare("SELECT * FROM lists WHERE user_id = ? ORDER BY created_at DESC");
-$stmt->bind_param("i", $user_id);
+$stmt->bind_param("i", $profile_user_id);
 $stmt->execute();
 $lists = $stmt->get_result();
 
-// Buscar reviews
-$stmt = $conn->prepare("SELECT * FROM reviews WHERE user_id = ? ORDER BY created_at DESC");
-$stmt->bind_param("i", $user_id);
+// Buscar reviews aprovadas
+$stmt = $conn->prepare("SELECT * FROM reviews WHERE user_id = ? AND approved = 1 ORDER BY created_at DESC");
+$stmt->bind_param("i", $profile_user_id);
 $stmt->execute();
 $reviews = $stmt->get_result();
 
 // Buscar distribuição de ratings
-$stmt = $conn->prepare("SELECT rating, COUNT(*) as count FROM reviews WHERE user_id = ? GROUP BY rating");
-$stmt->bind_param("i", $user_id);
+$stmt = $conn->prepare("SELECT rating, COUNT(*) as count FROM reviews WHERE user_id = ? AND approved = 1 GROUP BY rating");
+$stmt->bind_param("i", $profile_user_id);
 $stmt->execute();
 $ratings_result = $stmt->get_result();
 
@@ -64,7 +96,7 @@ while ($row = $ratings_result->fetch_assoc()) {
 // Calcular percentagens
 $max_count = max($ratings_distribution);
 
-// Buscar conquistas
+// Buscar conquistas do utilizador
 $all_achievements_result = $conn->query("SELECT * FROM achievements ORDER BY points ASC");
 $all_achievements = [];
 while ($ach = $all_achievements_result->fetch_assoc()) {
@@ -73,16 +105,16 @@ while ($ach = $all_achievements_result->fetch_assoc()) {
 
 $unlocked_ids = [];
 $stmt = $conn->prepare("SELECT achievement_id FROM user_achievements WHERE user_id = ?");
-$stmt->bind_param("i", $user_id);
+$stmt->bind_param("i", $profile_user_id);
 $stmt->execute();
 $result = $stmt->get_result();
 while ($row = $result->fetch_assoc()) {
     $unlocked_ids[] = $row['achievement_id'];
 }
 
-$achievement_progress = getAchievementProgress($user_id);
+$achievement_progress = getAchievementProgress($profile_user_id);
 ?>
-<title>O Meu Perfil - GameList</title>
+<title><?php echo htmlspecialchars($profile_user['username']); ?> - GameList</title>
 </head>
 <body>
 <style>
@@ -124,28 +156,6 @@ $achievement_progress = getAchievementProgress($user_id);
         object-fit: cover;
     }
 
-    .edit-banner-btn {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        background: rgba(0, 191, 255, 0.9);
-        color: #fff;
-        border: none;
-        padding: 12px 14px;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 600;
-        transition: all 0.3s;
-        box-shadow: 0 4px 12px rgba(0, 191, 255, 0.3);
-    }
-
-    .edit-banner-btn:hover { 
-        background: #00bfff;
-        transform: scale(1.05);
-        box-shadow: 0 6px 16px rgba(0, 191, 255, 0.5);
-    }
-
     /* Avatar e Info no Banner */
     .profile-header {
         position: absolute;
@@ -165,7 +175,6 @@ $achievement_progress = getAchievementProgress($user_id);
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
         background: #222;
         flex-shrink: 0;
-        position: relative;
     }
 
     .avatar-container img {
@@ -173,27 +182,6 @@ $achievement_progress = getAchievementProgress($user_id);
         height: 100%;
         border-radius: 2px;
         object-fit: cover;
-    }
-
-    .edit-avatar-btn {
-        position: absolute;
-        bottom: 5px;
-        right: 5px;
-        background: linear-gradient(135deg, #00bfff, #0080ff);
-        color: #fff;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 12px;
-        padding: 6px 10px;
-        font-weight: 600;
-        transition: all 0.3s;
-        box-shadow: 0 4px 12px rgba(0, 191, 255, 0.3);
-    }
-
-    .edit-avatar-btn:hover { 
-        transform: scale(1.05);
-        box-shadow: 0 6px 16px rgba(0, 191, 255, 0.5);
     }
 
     .profile-header-info {
@@ -207,19 +195,13 @@ $achievement_progress = getAchievementProgress($user_id);
         text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
     }
 
-    .profile-email {
-        color: #999;
-        font-size: 14px;
-        margin-bottom: 6px;
-    }
-
     .profile-social-links {
         display: flex;
         gap: 12px;
-        margin-top: 8px;
+        margin-bottom: 12px;
     }
 
-    .profile-social-links a, .profile-social-links span {
+    .profile-social-links a {
         color: #00bfff;
         text-decoration: none;
         font-size: 14px;
@@ -490,6 +472,31 @@ $achievement_progress = getAchievementProgress($user_id);
         letter-spacing: 1px;
     }
 
+    /* Follow Button */
+    .follow-btn {
+        padding: 10px 24px;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        background: #00b4ff;
+        color: #fff;
+    }
+
+    .follow-btn:hover {
+        background: #0095d9;
+    }
+
+    .follow-btn.following {
+        background: #444;
+    }
+
+    .follow-btn.following:hover {
+        background: #ff4444;
+    }
+
     /* Tabs */
     .tabs {
         display: flex;
@@ -529,6 +536,26 @@ $achievement_progress = getAchievementProgress($user_id);
         display: block;
     }
 
+    /* Lists */
+    .list-card {
+        background: #1a1a1a;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .list-card h3 {
+        color: #00bfff;
+        margin-bottom: 10px;
+    }
+
+    .list-card p {
+        color: #ccc;
+        font-size: 14px;
+        margin-bottom: 10px;
+    }
+
     /* Lists - Game Grid */
     .list-items {
         display: grid;
@@ -542,7 +569,6 @@ $achievement_progress = getAchievementProgress($user_id);
         overflow: hidden;
         transition: all 0.3s;
         border: 1px solid #2a2a2a;
-        position: relative;
     }
 
     .game-card:hover {
@@ -571,24 +597,6 @@ $achievement_progress = getAchievementProgress($user_id);
         text-align: center;
     }
 
-    .remove-btn { 
-        background: linear-gradient(90deg, #ff4444, #cc0000);
-        border: none;
-        padding: 8px 14px;
-        border-radius: 6px;
-        color: #fff;
-        cursor: pointer;
-        margin: 0 10px 10px 10px;
-        font-weight: 600;
-        transition: all 0.3s;
-        width: calc(100% - 20px);
-    }
-
-    .remove-btn:hover { 
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(255, 68, 68, 0.3);
-    }
-
     /* Reviews */
     .review-card {
         background: #1a1a1a;
@@ -596,13 +604,6 @@ $achievement_progress = getAchievementProgress($user_id);
         padding: 20px;
         margin-bottom: 20px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        border: 1px solid #2a2a2a;
-        transition: all 0.3s;
-    }
-
-    .review-card:hover {
-        border-color: #00bfff;
-        background: rgba(30, 30, 35, 0.8);
     }
 
     .review-card h3 {
@@ -613,32 +614,11 @@ $achievement_progress = getAchievementProgress($user_id);
     .review-rating {
         color: #ffd700;
         margin-bottom: 10px;
-        font-weight: bold;
-        font-size: 1.1rem;
     }
 
     .review-comment {
         color: #ccc;
         line-height: 1.6;
-        margin: 10px 0;
-    }
-
-    .edit-btn {
-        background: linear-gradient(90deg, #00bfff, #0080ff);
-        color: #fff;
-        padding: 8px 14px;
-        border-radius: 6px;
-        text-decoration: none;
-        font-weight: 600;
-        transition: all 0.3s;
-        display: inline-block;
-        margin-right: 8px;
-        font-size: 14px;
-    }
-
-    .edit-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 191, 255, 0.3);
     }
 
     .empty-state {
@@ -654,208 +634,60 @@ $achievement_progress = getAchievementProgress($user_id);
         opacity: 0.3;
     }
 
-    /* Logout Button */
-    .logout-btn {
-        display: inline-block;
-        padding: 10px 24px;
-        background: linear-gradient(90deg, #ff4444 0%, #cc0000 100%);
-        color: white;
-        text-decoration: none;
-        border-radius: 4px;
-        transition: all 0.3s;
-        font-weight: 600;
-        box-shadow: 0 4px 12px rgba(255, 68, 68, 0.3);
-        font-size: 14px;
-        margin-top: 8px;
+    /* Social Links */
+    .socials-card {
+        background: #1a1a1a;
+        border-radius: 8px;
+        padding: 20px;
+        border: 1px solid #2a2a2a;
     }
 
-    .logout-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(255, 68, 68, 0.5);
-    }
-
-    /* Modal */
-    .modal-overlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.8);
-        backdrop-filter: blur(3px);
-        z-index: 999;
-        justify-content: center;
-        align-items: center;
-    }
-
-    .modal {
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-        padding: 25px 25px;
-        border-radius: 16px;
-        width: 90%;
-        max-width: 500px;
-        max-height: 90vh;
-        overflow-y: auto;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
-        position: relative;
-        animation: slideIn 0.3s ease;
-        border: 2px solid rgba(0, 191, 255, 0.3);
-    }
-
-    @keyframes slideIn {
-        from { transform: translateY(-30px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-
-    .modal h3 { 
-        margin: 0 0 20px 0;
-        color: #fff;
-        font-size: 1.3rem;
-        text-align: left;
-        background: linear-gradient(90deg, #00bfff, #8a2be2);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    .modal label {
-        display: block;
+    .socials-card h3 {
         color: #00bfff;
-        font-size: 13px;
-        font-weight: 600;
-        margin-bottom: 8px;
-        text-align: left;
+        font-size: 1rem;
+        margin: 0 0 15px 0;
         text-transform: uppercase;
         letter-spacing: 1px;
-    }
-
-    .modal input[type="file"] {
-        display: block;
-        width: 100%;
-        padding: 10px;
-        margin-bottom: 18px;
-        background: rgba(0, 0, 0, 0.4);
-        border: 2px solid #2a2a2a;
-        border-radius: 8px;
-        color: #ccc;
-        font-size: 13px;
-        transition: all 0.3s;
-        cursor: pointer;
-    }
-
-    .modal input[type="file"]:hover {
-        border-color: #00bfff;
-        background: rgba(0, 191, 255, 0.05);
-    }
-
-    .modal input[type="file"]::file-selector-button {
-        background: linear-gradient(90deg, #00bfff, #0080ff);
-        border: none;
-        color: white;
-        padding: 6px 12px;
-        border-radius: 5px;
-        cursor: pointer;
         font-weight: 600;
-        margin-right: 10px;
-        transition: all 0.3s;
-        font-size: 12px;
     }
 
-    .modal input[type="file"]::file-selector-button:hover {
-        transform: scale(1.05);
-        box-shadow: 0 4px 12px rgba(0, 191, 255, 0.4);
-    }
-
-    .modal button[type="submit"] {
-        background: linear-gradient(90deg, #00bfff 0%, #0080ff 100%);
-        border: none;
-        color: white;
-        padding: 12px 28px;
-        border-radius: 8px;
-        cursor: pointer;
-        margin-top: 5px;
-        font-weight: 700;
-        font-size: 14px;
-        width: 100%;
-        transition: all 0.3s;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        box-shadow: 0 4px 15px rgba(0, 191, 255, 0.3);
-    }
-
-    .modal button[type="submit"]:hover { 
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0, 191, 255, 0.5);
-    }
-
-    .close-btn {
-        background: none;
-        border: none;
-        color: #aaa;
-        font-size: 28px;
-        position: absolute;
-        top: 10px;
-        right: 15px;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-
-    .close-btn:hover { 
-        color: #00bfff;
-        transform: scale(1.2);
-    }
-
-    .preview-box {
-        position: relative;
-        background: #0a0a0a;
-        border-radius: 10px;
-        overflow: visible;
-        margin-bottom: 50px;
-        height: 170px;
+    .socials-list {
         display: flex;
-        justify-content: center;
-        align-items: flex-start;
         flex-direction: column;
-        border: 2px solid #2a2a2a;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        gap: 10px;
     }
 
-    .preview-banner {
-        width: 100%;
-        height: 120px;
-        object-fit: cover;
-        border-radius: 8px 8px 0 0;
+    .social-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px;
+        background: rgba(0, 191, 255, 0.05);
+        border-radius: 4px;
+        transition: all 0.2s;
     }
 
-    .preview-avatar {
-        position: absolute;
-        bottom: -30px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 70px;
-        height: 70px;
-        border-radius: 5px;
-        border: 4px solid #0a0a0a;
-        object-fit: cover;
-        background: #0a0a0a;
-        box-shadow: 0 6px 20px rgba(0, 191, 255, 0.3);
+    .social-item:hover {
+        background: rgba(0, 191, 255, 0.1);
     }
 
-    .preview-label {
-        position: absolute;
-        top: 8px;
-        left: 8px;
-        background: rgba(0, 191, 255, 0.9);
-        color: white;
-        padding: 4px 10px;
-        border-radius: 5px;
-        font-size: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 1px;
+    .social-icon {
+        font-size: 1.5rem;
+    }
+
+    .social-link {
+        font-size: 0.9rem;
+        text-decoration: none;
+        font-weight: 500;
+        color: #00bfff;
+        word-break: break-word;
+    }
+
+    .social-link:hover {
+        text-decoration: underline;
     }
 
     @media (max-width: 768px) {
-        body { padding-top: 70px; }
-        
         .content-wrapper {
             grid-template-columns: 1fr;
         }
@@ -883,32 +715,25 @@ $achievement_progress = getAchievementProgress($user_id);
         .profile-header-info h1 {
             font-size: 1.8rem;
         }
-        
-        .achievements-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
     }
 </style>
 
 <div class="container">
     <div class="banner-section">
         <div class="banner-container">
-            <?php if ($user['banner']): ?>
-                <img src="<?php echo htmlspecialchars($user['banner']); ?>" alt="Banner" class="banner">
+            <?php if ($profile_user['banner']): ?>
+                <img src="<?php echo htmlspecialchars($profile_user['banner']); ?>" alt="Banner" class="banner">
             <?php endif; ?>
-            <button class="edit-banner-btn" onclick="openModal()">✏️</button>
             
             <div class="profile-header">
                 <div class="avatar-container">
-                    <img src="<?php echo htmlspecialchars($user['avatar'] ?: 'https://via.placeholder.com/180?text=User'); ?>" alt="Avatar">
-                    <button class="edit-avatar-btn" onclick="openModal()">✏️</button>
+                    <img src="<?php echo htmlspecialchars($profile_user['avatar'] ?: 'https://via.placeholder.com/180?text=User'); ?>" alt="Avatar">
                 </div>
                 <div class="profile-header-info">
-                    <h1><?php echo htmlspecialchars($user['username']); ?></h1>
-                    <div class="profile-email">📧 <?php echo htmlspecialchars($user['email']); ?></div>
+                    <h1><?php echo htmlspecialchars($profile_user['username']); ?></h1>
                     
                     <?php 
-                    $socials = json_decode($user['social_links'] ?? '{}', true) ?? [];
+                    $socials = json_decode($profile_user['social_links'] ?? '{}', true) ?? [];
                     if (!empty($socials['twitter']) || !empty($socials['instagram']) || !empty($socials['discord'])): 
                     ?>
                         <div class="profile-social-links">
@@ -923,14 +748,20 @@ $achievement_progress = getAchievementProgress($user_id);
                                 </a>
                             <?php endif; ?>
                             <?php if (!empty($socials['discord'])): ?>
-                                <span style="color: #999;">
+                                <span style="color: #999; font-size: 14px; padding: 6px 12px; background: rgba(0, 0, 0, 0.7); border-radius: 4px;">
                                     💬 <?php echo htmlspecialchars($socials['discord']); ?>
                                 </span>
                             <?php endif; ?>
                         </div>
                     <?php endif; ?>
                     
-                    <a href="logout.php" class="logout-btn">🚪 Terminar sessão</a>
+                    <?php if (isset($_SESSION['user_id'])): ?>
+                        <button id="followBtn" class="follow-btn <?php echo $is_following ? 'following' : ''; ?>" 
+                                data-user-id="<?php echo $profile_user_id; ?>"
+                                data-following="<?php echo $is_following ? 'true' : 'false'; ?>">
+                            <?php echo $is_following ? 'A seguir ✓' : 'Seguir'; ?>
+                        </button>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -939,10 +770,10 @@ $achievement_progress = getAchievementProgress($user_id);
     <div class="content-wrapper">
         <!-- Sidebar -->
         <div class="sidebar">
-            <?php if (!empty($user['biography'])): ?>
+            <?php if (!empty($profile_user['biography'])): ?>
                 <div class="bio-card">
                     <h3>Bio</h3>
-                    <div class="bio-text"><?php echo nl2br(htmlspecialchars($user['biography'])); ?></div>
+                    <div class="bio-text"><?php echo nl2br(htmlspecialchars($profile_user['biography'])); ?></div>
                 </div>
             <?php endif; ?>
 
@@ -994,7 +825,7 @@ $achievement_progress = getAchievementProgress($user_id);
         <div class="main-content">
             <div class="stats-grid">
                 <div class="stat-card">
-                    <span class="stat-value"><?php echo $followers_count; ?></span>
+                    <span class="stat-value" id="followersCount"><?php echo $followers_count; ?></span>
                     <span class="stat-label">Seguidores</span>
                 </div>
                 <div class="stat-card">
@@ -1009,6 +840,7 @@ $achievement_progress = getAchievementProgress($user_id);
 
             <div class="tabs">
                 <?php 
+                // Resetar o ponteiro do resultado para reler as listas
                 $lists->data_seek(0);
                 $list_index = 0;
                 while ($list = $lists->fetch_assoc()): 
@@ -1020,10 +852,11 @@ $achievement_progress = getAchievementProgress($user_id);
                     $list_index++;
                 endwhile; 
                 ?>
-                <button class="tab-btn <?php echo $lists->num_rows === 0 ? 'active' : ''; ?>" data-tab="reviews">Reviews</button>
+                <button class="tab-btn" data-tab="reviews">Reviews</button>
             </div>
 
             <?php 
+            // Resetar novamente para criar o conteúdo das tabs
             $lists->data_seek(0);
             $list_index = 0;
             while ($list = $lists->fetch_assoc()): 
@@ -1047,11 +880,6 @@ $achievement_progress = getAchievementProgress($user_id);
                                          class="list-item-img">
                                     <p><?php echo htmlspecialchars($item['game_name']); ?></p>
                                 </a>
-                                <form method="POST" action="remove_from_list.php">
-                                    <input type="hidden" name="list_id" value="<?php echo $list_id; ?>">
-                                    <input type="hidden" name="game_id" value="<?php echo $item['game_id']; ?>">
-                                    <button type="submit" class="remove-btn">❌ Remover</button>
-                                </form>
                             </div>
                         <?php 
                             endwhile;
@@ -1067,72 +895,37 @@ $achievement_progress = getAchievementProgress($user_id);
                 $list_index++;
             endwhile; 
             
+            // Se não há listas, mostrar mensagem
             if ($lists->num_rows === 0):
             ?>
                 <div id="list-emptyTab" class="tab-content active">
                     <div class="empty-state">
-                        <p>Ainda não criaste nenhuma lista.</p>
+                        <p>Este utilizador ainda não criou nenhuma lista.</p>
                     </div>
                 </div>
             <?php endif; ?>
 
-            <div id="reviewsTab" class="tab-content <?php echo $lists->num_rows === 0 ? 'active' : ''; ?>">
-                <?php 
-                $reviews->data_seek(0);
-                if ($reviews->num_rows > 0): 
-                ?>
-                    <?php while ($review = $reviews->fetch_assoc()): ?>
-                        <div class="review-card">
-                            <h3><?php echo htmlspecialchars($review['game_name'] ?? 'Jogo #' . $review['game_id']); ?></h3>
-                            <div class="review-rating">
-                                <?php echo str_repeat('⭐', $review['rating']); ?>
-                            </div>
-                            <p class="review-comment"><?php echo nl2br(htmlspecialchars($review['comment'])); ?></p>
-                            <p style="font-size: 12px; color: #666; margin-top: 10px;">
-                                <?php echo date('d/m/Y H:i', strtotime($review['created_at'])); ?>
-                            </p>
-                            
-                            <div style="margin-top: 12px;">
-                                <a href="edit_review.php?id=<?php echo $review['id']; ?>" class="edit-btn">✏️ Editar</a>
-                                <form method="POST" action="remove_review.php" style="display: inline;">
-                                    <input type="hidden" name="review_id" value="<?php echo $review['id']; ?>">
-                                    <button type="submit" class="remove-btn" style="width: auto; margin: 0;">❌ Apagar</button>
-                                </form>
-                            </div>
-                        </div>
-                    <?php endwhile; ?>
-                <?php else: ?>
-                    <div class="empty-state">
-                        <p>Ainda não escreveste nenhuma review.</p>
+            <div id="reviewsTab" class="tab-content">
+        <?php if ($reviews->num_rows > 0): ?>
+            <?php while ($review = $reviews->fetch_assoc()): ?>
+                <div class="review-card">
+                    <h3><?php echo htmlspecialchars($review['game_name'] ?? 'Jogo #' . $review['game_id']); ?></h3>
+                    <div class="review-rating">
+                        <?php echo str_repeat('⭐', $review['rating']); ?>
                     </div>
-                <?php endif; ?>
+                    <p class="review-comment"><?php echo nl2br(htmlspecialchars($review['comment'])); ?></p>
+                    <p style="font-size: 12px; color: #666; margin-top: 10px;">
+                        <?php echo date('d/m/Y', strtotime($review['created_at'])); ?>
+                    </p>
+                </div>
+            <?php endwhile; ?>
+        <?php else: ?>
+            <div class="empty-state">
+                <p>Este utilizador ainda não escreveu nenhuma review.</p>
+            </div>
+        <?php endif; ?>
             </div>
         </div>
-    </div>
-</div>
-
-<!-- MODAL -->
-<div class="modal-overlay" id="modalOverlay">
-    <div class="modal">
-        <button class="close-btn" onclick="closeModal()">×</button>
-        <h3>✨ Personalizar Perfil</h3>
-
-        <!-- Preview -->
-        <div class="preview-box" id="previewBox">
-            <div class="preview-label">PREVIEW</div>
-            <img src="<?php echo $user['banner'] ?: 'https://via.placeholder.com/1000x250?text=Sem+Banner'; ?>" id="previewBanner" class="preview-banner">
-            <img src="<?php echo $user['avatar'] ?: 'https://via.placeholder.com/130x130?text=Avatar'; ?>" id="previewAvatar" class="preview-avatar">
-        </div>
-
-        <form action="update_profile_images.php" method="POST" enctype="multipart/form-data">
-            <label>🖼️ Banner do perfil</label>
-            <input type="file" name="banner" id="bannerInput" accept="image/*">
-            
-            <label>👤 Foto de perfil</label>
-            <input type="file" name="avatar" id="avatarInput" accept="image/*">
-            
-            <button type="submit">💾 Guardar Alterações</button>
-        </form>
     </div>
 </div>
 
@@ -1150,29 +943,49 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     });
 });
 
-function openModal() {
-    document.getElementById('modalOverlay').style.display = 'flex';
+// Follow/Unfollow
+const followBtn = document.getElementById('followBtn');
+if (followBtn) {
+    followBtn.addEventListener('click', async () => {
+        const userId = followBtn.dataset.userId;
+        const isFollowing = followBtn.dataset.following === 'true';
+        const action = isFollowing ? 'unfollow' : 'follow';
+        
+        followBtn.disabled = true;
+        
+        try {
+            const formData = new FormData();
+            formData.append('action', action);
+            formData.append('user_id', userId);
+            
+            const response = await fetch('follow.php', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                const newFollowing = action === 'follow';
+                followBtn.dataset.following = newFollowing ? 'true' : 'false';
+                followBtn.textContent = newFollowing ? 'A seguir ✓' : 'Seguir';
+                followBtn.classList.toggle('following', newFollowing);
+                
+                // Atualizar contador
+                const followersCount = document.getElementById('followersCount');
+                const currentCount = parseInt(followersCount.textContent);
+                followersCount.textContent = newFollowing ? currentCount + 1 : currentCount - 1;
+            } else {
+                alert(data.message || 'Erro ao processar ação');
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro ao processar ação');
+        } finally {
+            followBtn.disabled = false;
+        }
+    });
 }
-
-function closeModal() {
-    document.getElementById('modalOverlay').style.display = 'none';
-}
-
-// Preview das imagens escolhidas
-const bannerInput = document.getElementById('bannerInput');
-const avatarInput = document.getElementById('avatarInput');
-const previewBanner = document.getElementById('previewBanner');
-const previewAvatar = document.getElementById('previewAvatar');
-
-bannerInput.addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) previewBanner.src = URL.createObjectURL(file);
-});
-
-avatarInput.addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) previewAvatar.src = URL.createObjectURL(file);
-});
 </script>
 
 <?php include 'includes/footer.php'; ?>
