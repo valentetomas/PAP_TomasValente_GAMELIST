@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'includes/db.php';
+require_once 'includes/achievements.php';
 
 header('Content-Type: application/json');
 
@@ -46,6 +47,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param("ii", $user_id, $target_user_id);
         
         if ($stmt->execute()) {
+            // Verificar conquistas após seguir (para quem seguiu e para quem foi seguido)
+            checkAndUnlockAchievements($user_id);
+            checkAndUnlockAchievements($target_user_id);
+            
             echo json_encode([
                 'success' => true, 
                 'message' => 'Agora segues ' . htmlspecialchars($target_user['username']),
@@ -60,6 +65,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param("ii", $user_id, $target_user_id);
         
         if ($stmt->execute()) {
+            // Verificar conquistas após deixar de seguir (caso tenham sido removidas)
+            checkAndUnlockAchievements($user_id);
+            checkAndUnlockAchievements($target_user_id);
+            
             echo json_encode([
                 'success' => true, 
                 'message' => 'Deixaste de seguir ' . htmlspecialchars($target_user['username']),

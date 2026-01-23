@@ -1,6 +1,7 @@
 <?php
 include 'includes/db.php';
 require 'includes/email_helper.php';
+require_once 'includes/achievements.php';
 
 $msg = "";
 $msgClass = "";
@@ -43,6 +44,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $createList->bind_param("is", $user_id, $listName);
                     $createList->execute();
                 }
+
+                // Verificar conquistas (Early Adopter - criar conta)
+                checkAndUnlockAchievements($user_id);
 
                 // Envia email de verificação
                 if (sendVerificationEmail($email, $username, $verificationToken)) {

@@ -561,6 +561,13 @@ $achievement_progress = getAchievementProgress($profile_user_id);
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
         gap: 20px;
+        min-height: 300px;
+    }
+
+    .list-items:has(.empty-state) {
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .game-card {

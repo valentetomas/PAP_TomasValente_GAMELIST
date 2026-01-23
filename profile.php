@@ -534,6 +534,13 @@ $achievement_progress = getAchievementProgress($user_id);
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
         gap: 20px;
+        min-height: 300px;
+    }
+
+    .list-items:has(.empty-state) {
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .game-card {
@@ -645,6 +652,11 @@ $achievement_progress = getAchievementProgress($user_id);
         text-align: center;
         padding: 60px 20px;
         color: #666;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
     }
 
     .empty-state svg {

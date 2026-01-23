@@ -1,5 +1,6 @@
 <?php
 include 'includes/db.php';
+require_once 'includes/achievements.php';
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
@@ -17,6 +18,9 @@ if (isset($_POST['game_id'], $_POST['game_name'], $_POST['game_image'], $_POST['
     $stmt = $conn->prepare("INSERT INTO reviews (user_id, game_id, game_name, game_image, rating, comment) VALUES (?, ?, ?, ?, ?, ?)");
     $stmt->bind_param("iissis", $user_id, $game_id, $game_name, $game_image, $rating, $comment);
     $stmt->execute();
+
+    // Verificar conquistas após adicionar review
+    checkAndUnlockAchievements($user_id);
 
     header("Location: profile.php"); // volta para o perfil
     exit();

@@ -1,6 +1,8 @@
 <?php
 // Sistema de verificação e desbloqueio de conquistas
-require_once 'includes/db.php';
+if (!isset($conn)) {
+    require_once __DIR__ . '/db.php';
+}
 
 function checkAndUnlockAchievements($user_id) {
     global $conn;
@@ -27,14 +29,6 @@ function checkAndUnlockAchievements($user_id) {
         $current_value = 0;
         
         switch ($achievement['type']) {
-            case 'list_count':
-                $stmt = $conn->prepare("SELECT COUNT(*) as count FROM lists WHERE user_id = ?");
-                $stmt->bind_param("i", $user_id);
-                $stmt->execute();
-                $current_value = $stmt->get_result()->fetch_assoc()['count'];
-                $unlocked = $current_value >= $achievement['requirement'];
-                break;
-                
             case 'review_count':
                 $stmt = $conn->prepare("SELECT COUNT(*) as count FROM reviews WHERE user_id = ? AND approved = 1");
                 $stmt->bind_param("i", $user_id);
