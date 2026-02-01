@@ -19,7 +19,7 @@ if (isset($_GET['token'])) {
         $validToken = true;
         $user = $result->fetch_assoc();
     } else {
-        $msg = "⚠️ Token inválido ou expirado.";
+        $msg = "Este token é inválido ou já expirou.";
         $msgClass = "error";
     }
 }
@@ -30,11 +30,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['token'])) {
     $confirmPassword = trim($_POST['confirm_password']);
     
     if (strlen($newPassword) < 6) {
-        $msg = "⚠️ A password deve ter pelo menos 6 caracteres!";
+        $msg = "A password deve ter pelo menos 6 caracteres!";
         $msgClass = "error";
         $validToken = true;
     } elseif ($newPassword !== $confirmPassword) {
-        $msg = "⚠️ As passwords não coincidem!";
+        $msg = "As passwords não coincidem!";
         $msgClass = "error";
         $validToken = true;
     } else {
@@ -53,16 +53,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['token'])) {
             $updateStmt->bind_param("si", $passwordHash, $user['id']);
             
             if ($updateStmt->execute()) {
-                $msg = "✅ Password alterada com sucesso! Já podes fazer login.";
+                $msg = "Password alterada com sucesso! Já podes fazer login.";
                 $msgClass = "success";
                 $validToken = false;
             } else {
-                $msg = "❌ Erro ao alterar password. Tenta novamente.";
+                $msg = "Erro ao alterar password. Tenta novamente.";
                 $msgClass = "error";
                 $validToken = true;
             }
         } else {
-            $msg = "⚠️ Token inválido ou expirado.";
+            $msg = "Token inválido ou expirado.";
             $msgClass = "error";
         }
     }
@@ -71,142 +71,245 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['token'])) {
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" type="image/png" sizes="32x32" href="img/logo.png">
-<link rel="icon" type="image/png" sizes="16x16" href="img/logo.png">
-<link rel="shortcut icon" href="img/logo.png">
-<title>Nova Password - GameList</title>
-<style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Password - GameList</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="img/logo_favicon.png">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    body {
-        height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #121212;
-        padding: 20px;
-    }
+    <style>
+        :root {
+            --primary: #00b4ff;
+            --secondary: #8a2be2;
+            --bg-dark: #0f0f12;
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+        }
 
-    .form-container {
-        background: #1e1e1e;
-        padding: 40px;
-        border-radius: 15px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.7);
-        width: 100%;
-        max-width: 450px;
-    }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
 
-    .logo {
-        text-align: center;
-        font-size: 3rem;
-        margin-bottom: 10px;
-    }
+        body {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--bg-dark);
+            overflow: hidden;
+            position: relative;
+        }
 
-    h1 {
-        text-align: center;
-        color: #ffffff;
-        margin-bottom: 30px;
-        font-size: 26px;
-    }
+        /* --- Fundo Animado --- */
+        .background-anim {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            overflow: hidden;
+        }
 
-    .message {
-        padding: 15px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        text-align: center;
-    }
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.6;
+            animation: float 20s infinite ease-in-out alternate;
+        }
 
-    .message.success {
-        background: #1b5e20;
-        color: #a5d6a7;
-        border: 1px solid #2e7d32;
-    }
+        .orb-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, var(--secondary), transparent 70%); animation-delay: 0s; }
+        .orb-2 { bottom: -10%; right: -10%; width: 60vw; height: 60vw; background: radial-gradient(circle, var(--primary), transparent 70%); animation-delay: -5s; }
+        .orb-3 { top: 40%; left: 40%; width: 30vw; height: 30vw; background: radial-gradient(circle, #ff007a, transparent 70%); animation-duration: 25s; opacity: 0.4; }
 
-    .message.error {
-        background: #b71c1c;
-        color: #ff8a80;
-        border: 1px solid #7f0000;
-    }
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
 
-    .input-group {
-        margin-bottom: 20px;
-    }
+        .grid-overlay {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 2;
+            pointer-events: none;
+        }
 
-    label {
-        display: block;
-        color: #e0e0e0;
-        font-weight: 600;
-        margin-bottom: 8px;
-        font-size: 14px;
-    }
+        /* --- Cartão de Reset --- */
+        .reset-card {
+            position: relative;
+            z-index: 10;
+            background: rgba(20, 20, 25, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            padding: 50px 40px;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            width: 100%;
+            max-width: 450px;
+        }
 
-    input {
-        width: 100%;
-        padding: 12px 15px;
-        border: 1px solid #333;
-        border-radius: 10px;
-        background-color: #2a2a2a;
-        color: #e0e0e0;
-        font-size: 15px;
-        transition: 0.3s;
-    }
+        .reset-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+        }
 
-    input::placeholder {
-        color: #aaaaaa;
-    }
+        /* Logo Area */
+        .logo-area { text-align: center; margin-bottom: 25px; }
+        .logo-area img { width: 70px; margin-bottom: 5px; }
 
-    input:focus {
-        outline: none;
-        border-color: #00b4ff;
-        box-shadow: 0 0 8px rgba(0,180,255,0.5);
-    }
+        h1 { 
+            text-align: center;
+            font-size: 26px; 
+            font-weight: 700; 
+            color: #fff; 
+            margin-bottom: 25px; 
+        }
 
-    button, .btn {
-        width: 100%;
-        padding: 14px;
-        background: linear-gradient(90deg, #00b4ff, #8a2be2);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: 0.3s;
-        display: inline-block;
-        text-align: center;
-        text-decoration: none;
-    }
+        /* Inputs */
+        .input-group { position: relative; margin-bottom: 20px; }
 
-    button:hover, .btn:hover {
-        background: linear-gradient(90deg, #8a2be2, #00b4ff);
-    }
+        label {
+            display: block;
+            color: #d1d5db;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
 
-    .links {
-        margin-top: 20px;
-        text-align: center;
-        font-size: 14px;
-    }
+        input {
+            width: 100%;
+            padding: 14px 16px 14px 45px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
 
-    .links a {
-        color: #00b4ff;
-        text-decoration: none;
-        font-weight: 600;
-    }
+        .input-group i {
+            position: absolute;
+            left: 16px;
+            top: 42px; /* Ajustado para alinhar com o input considerando o label */
+            color: #6b7280;
+            transition: 0.3s;
+            pointer-events: none;
+        }
 
-    .links a:hover {
-        text-decoration: underline;
-    }
-</style>
+        input::placeholder { color: #4b5563; }
+        input:focus {
+            border-color: var(--primary);
+            background: rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 0 4px rgba(0, 180, 255, 0.15);
+        }
+        input:focus + i { color: var(--primary); }
+
+        /* Botão */
+        button, .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #fff;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            background-size: 200% auto;
+            transition: 0.4s;
+            box-shadow: 0 4px 20px rgba(0, 180, 255, 0.25);
+            display: block;
+            text-align: center;
+            text-decoration: none;
+            margin-top: 10px;
+        }
+
+        button:hover, .btn:hover {
+            background-position: right center;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(138, 43, 226, 0.4);
+        }
+
+        /* Mensagens */
+        .msg-box {
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .msg-box.error {
+            background: rgba(231, 76, 60, 0.15);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            color: #ff6b6b;
+            animation: shake 0.4s ease-in-out;
+        }
+
+        .msg-box.success {
+            background: rgba(46, 204, 113, 0.15);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            color: #2ecc71;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .links { margin-top: 25px; text-align: center; }
+        .links a {
+            color: #9ca3af;
+            font-size: 14px;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+        .links a:hover { color: #fff; }
+
+        @media (max-width: 480px) {
+            .reset-card { padding: 40px 25px; }
+        }
+    </style>
 </head>
 <body>
-    <div class="form-container">
-        <div class="logo">🎮</div>
+
+    <div class="background-anim">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+    <div class="grid-overlay"></div>
+
+    <div class="reset-card">
+        <div class="logo-area">
+            <img src="img/logo.png" alt="Logo" onerror="this.style.display='none'; document.getElementById('default-icon').style.display='inline-block';">
+            <i id="default-icon" class="fa-solid fa-gamepad" style="font-size: 50px; color: var(--primary); display: none;"></i>
+        </div>
+        
         <h1>Nova Password</h1>
 
         <?php if ($msg): ?>
-            <div class="message <?php echo $msgClass; ?>"><?php echo $msg; ?></div>
+            <div class="msg-box <?php echo $msgClass; ?>">
+                <?php if($msgClass == 'success'): ?>
+                    <i class="fa-solid fa-check-circle"></i>
+                <?php else: ?>
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                <?php endif; ?>
+                <span><?php echo $msg; ?></span>
+            </div>
         <?php endif; ?>
 
         <?php if ($validToken): ?>
@@ -216,11 +319,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['token'])) {
                 <div class="input-group">
                     <label for="password">Nova Password</label>
                     <input type="password" id="password" name="password" placeholder="Mínimo 6 caracteres" required>
+                    <i class="fa-solid fa-lock"></i>
                 </div>
 
                 <div class="input-group">
                     <label for="confirm_password">Confirmar Password</label>
                     <input type="password" id="confirm_password" name="confirm_password" placeholder="Repete a password" required>
+                    <i class="fa-solid fa-lock"></i>
                 </div>
 
                 <button type="submit">Alterar Password</button>
@@ -235,5 +340,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['token'])) {
             <a href="index.php">← Voltar à Página Inicial</a>
         </div>
     </div>
+
 </body>
 </html>

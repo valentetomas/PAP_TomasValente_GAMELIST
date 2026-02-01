@@ -2,7 +2,19 @@
 include 'includes/db.php';
 require_once 'includes/achievements.php';
 
+$isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
+function jsonResponse($status, $message, $httpCode = 200) {
+    http_response_code($httpCode);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['status' => $status, 'message' => $message]);
+    exit;
+}
+
 if (!isset($_SESSION['user_id'])) {
+    if ($isAjax) {
+        jsonResponse('auth', 'Precisas de iniciar sessão para adicionar jogos.', 401);
+    }
     die("Precisas de iniciar sessão para adicionar jogos.");
 }
 
@@ -37,18 +49,30 @@ if (isset($_POST['list_name'], $_POST['game_id'], $_POST['game_name'], $_POST['g
             // Verificar conquistas após adicionar jogo
             checkAndUnlockAchievements($user_id);
             
+            if ($isAjax) {
+                jsonResponse('added', '✅ Jogo adicionado!');
+            }
             $_SESSION['msg'] = 'added';
             header("Location: game.php?id=$game_id&name=" . urlencode($game_name) . "&image=" . urlencode($game_image));
             exit;
         } else {
+            if ($isAjax) {
+                jsonResponse('exists', '⚠️ O jogo já está na lista.');
+            }
             $_SESSION['msg'] = 'exists';
             header("Location: game.php?id=$game_id&name=" . urlencode($game_name) . "&image=" . urlencode($game_image));
             exit;
         }
     } else {
+        if ($isAjax) {
+            jsonResponse('error', '❌ Lista não encontrada.', 404);
+        }
         echo "❌ Lista não encontrada.";
     }
 } else {
+    if ($isAjax) {
+        jsonResponse('error', '❌ Dados em falta.', 400);
+    }
     echo "❌ Dados em falta.";
 }
 ?>

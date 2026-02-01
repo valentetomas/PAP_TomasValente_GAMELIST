@@ -55,161 +55,268 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" type="image/png" sizes="32x32" href="img/logo.png">
-<link rel="icon" type="image/png" sizes="16x16" href="img/logo.png">
-<link rel="shortcut icon" href="img/logo.png">
-<title>Recuperar Password - GameList</title>
-<style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperar Password - GameList</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="img/logo_favicon.png">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    body {
-        height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #121212;
-        padding: 20px;
-    }
+    <style>
+        :root {
+            --primary: #00b4ff;
+            --secondary: #8a2be2;
+            --bg-dark: #0f0f12;
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+        }
 
-    .form-container {
-        background: #1e1e1e;
-        padding: 40px;
-        border-radius: 15px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.7);
-        width: 100%;
-        max-width: 450px;
-    }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
 
-    .logo {
-        text-align: center;
-        font-size: 3rem;
-        margin-bottom: 10px;
-    }
+        body {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--bg-dark);
+            overflow: hidden;
+            position: relative;
+        }
 
-    h1 {
-        text-align: center;
-        color: #ffffff;
-        margin-bottom: 10px;
-        font-size: 26px;
-    }
+        /* --- Fundo Animado --- */
+        .background-anim {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            overflow: hidden;
+        }
 
-    p {
-        text-align: center;
-        color: #aaaaaa;
-        margin-bottom: 30px;
-        font-size: 14px;
-    }
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.6;
+            animation: float 20s infinite ease-in-out alternate;
+        }
 
-    .message {
-        padding: 15px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        text-align: center;
-    }
+        .orb-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, var(--secondary), transparent 70%); animation-delay: 0s; }
+        .orb-2 { bottom: -10%; right: -10%; width: 60vw; height: 60vw; background: radial-gradient(circle, var(--primary), transparent 70%); animation-delay: -5s; }
+        .orb-3 { top: 40%; left: 40%; width: 30vw; height: 30vw; background: radial-gradient(circle, #ff007a, transparent 70%); animation-duration: 25s; opacity: 0.4; }
 
-    .message.success {
-        background: #1b5e20;
-        color: #a5d6a7;
-        border: 1px solid #2e7d32;
-    }
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
 
-    .message.error {
-        background: #b71c1c;
-        color: #ff8a80;
-        border: 1px solid #7f0000;
-    }
+        .grid-overlay {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 2;
+            pointer-events: none;
+        }
 
-    .input-group {
-        margin-bottom: 20px;
-    }
+        /* --- Cartão de Recuperação --- */
+        .recover-card {
+            position: relative;
+            z-index: 10;
+            background: rgba(20, 20, 25, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            padding: 50px 40px;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
 
-    label {
-        display: block;
-        color: #e0e0e0;
-        font-weight: 600;
-        margin-bottom: 8px;
-        font-size: 14px;
-    }
+        .recover-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+        }
 
-    input {
-        width: 100%;
-        padding: 12px 15px;
-        border: 1px solid #333;
-        border-radius: 10px;
-        background-color: #2a2a2a;
-        color: #e0e0e0;
-        font-size: 15px;
-        transition: 0.3s;
-    }
+        /* Logo Area */
+        .logo-area { margin-bottom: 25px; }
 
-    input::placeholder {
-        color: #aaaaaa;
-    }
+        .logo-link {
+            display: inline-block;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-decoration: none;
+        }
 
-    input:focus {
-        outline: none;
-        border-color: #00b4ff;
-        box-shadow: 0 0 8px rgba(0,180,255,0.5);
-    }
+        .logo-link:hover {
+            transform: scale(1.1);
+            filter: drop-shadow(0 0 15px rgba(0, 180, 255, 0.6));
+        }
 
-    button {
-        width: 100%;
-        padding: 14px;
-        background: linear-gradient(90deg, #00b4ff, #8a2be2);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: 0.3s;
-    }
+        .logo-area img { width: 70px; margin-bottom: 5px; }
 
-    button:hover {
-        background: linear-gradient(90deg, #8a2be2, #00b4ff);
-    }
+        h1 { font-size: 26px; font-weight: 700; color: #fff; margin-bottom: 10px; }
+        .subtitle { color: #9ca3af; font-size: 14px; margin-bottom: 30px; line-height: 1.5; }
 
-    .links {
-        margin-top: 20px;
-        text-align: center;
-        font-size: 14px;
-    }
+        /* Inputs */
+        .input-group { position: relative; margin-bottom: 20px; text-align: left; }
 
-    .links a {
-        color: #00b4ff;
-        text-decoration: none;
-        font-weight: 600;
-    }
+        input {
+            width: 100%;
+            padding: 14px 16px 14px 45px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
 
-    .links a:hover {
-        text-decoration: underline;
-    }
-</style>
+        .input-group i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+            transition: 0.3s;
+            pointer-events: none;
+        }
+
+        input::placeholder { color: #4b5563; }
+        input:focus {
+            border-color: var(--primary);
+            background: rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 0 4px rgba(0, 180, 255, 0.15);
+        }
+        input:focus + i { color: var(--primary); }
+
+        /* Botão */
+        button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #fff;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            background-size: 200% auto;
+            transition: 0.4s;
+            box-shadow: 0 4px 20px rgba(0, 180, 255, 0.25);
+        }
+
+        button:hover {
+            background-position: right center;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(138, 43, 226, 0.4);
+        }
+
+        /* Mensagens */
+        .msg {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .msg.error {
+            background: rgba(231, 76, 60, 0.15);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            color: #ff6b6b;
+            animation: shake 0.4s ease-in-out;
+        }
+
+        .msg.success {
+            background: rgba(46, 204, 113, 0.15);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            color: #2ecc71;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .links { margin-top: 25px; font-size: 14px; }
+        .links a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .links a:hover {
+            color: var(--secondary);
+            text-shadow: 0 0 10px rgba(138, 43, 226, 0.5);
+            transform: translateX(-3px);
+        }
+
+        @media (max-width: 480px) {
+            .recover-card { padding: 40px 25px; }
+        }
+    </style>
 </head>
 <body>
-    <div class="form-container">
-        <div class="logo">🎮</div>
-        <h1>Recuperar Password</h1>
-        <p>Introduz o teu email e enviaremos instruções de recuperação</p>
 
-        <?php if ($msg): ?>
-            <div class="message <?php echo $msgClass; ?>"><?php echo $msg; ?></div>
-        <?php endif; ?>
+    <div class="background-anim">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+    <div class="grid-overlay"></div>
+
+    <div class="recover-card">
+        <div class="logo-area">
+            <a href="index.php" class="logo-link" title="Voltar ao início">
+                <img src="img/logo.png" alt="Logo" onerror="this.style.display='none'; document.getElementById('default-icon').style.display='block';">
+                <i id="default-icon" class="fa-solid fa-gamepad" style="font-size: 50px; color: var(--primary); display: none;"></i>
+            </a>
+            <h1>Recuperar Conta</h1>
+            <p class="subtitle">Introduz o teu email e enviaremos instruções para recuperares a tua password.</p>
+        </div>
 
         <form method="POST">
             <div class="input-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" placeholder="teu-email@exemplo.com" required>
+                <input type="email" id="email" name="email" placeholder="O teu email registado" required>
+                <i class="fa-regular fa-envelope"></i>
             </div>
 
             <button type="submit">Enviar Email de Recuperação</button>
         </form>
 
+        <?php if ($msg): ?>
+            <div class="msg <?php echo $msgClass; ?>">
+                <?php if($msgClass == 'success'): ?>
+                    <i class="fa-solid fa-check-circle"></i>
+                <?php else: ?>
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                <?php endif; ?>
+                <span><?php echo $msg; ?></span>
+            </div>
+        <?php endif; ?>
+
         <div class="links">
-            <a href="login.php">← Voltar ao Login</a>
+            <a href="login.php"><i class="fa-solid fa-arrow-left"></i> Voltar ao Login</a>
         </div>
     </div>
+
 </body>
 </html>
