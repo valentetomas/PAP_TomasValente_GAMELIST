@@ -59,5 +59,4 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <button type="submit">💾 Guardar alterações</button>
         <p><a href="profile.php">Cancelar</a></p>
     </form>
-</body>
-</html>
+<?php include 'includes/footer.php'; ?>

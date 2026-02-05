@@ -118,12 +118,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['change_theme'])) {
     }
 }
 
-// Deletar conta
+// Eliminar conta
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_account'])) {
     $password = $_POST['delete_password'];
     
     if (!password_verify($password, $user['password'])) {
-        $error = "Password incorreta. Não foi possível deletar a conta.";
+        $error = "Password incorreta. Não foi possível eliminar a conta.";
     } else {
         $conn->query("DELETE FROM reviews WHERE user_id = $user_id");
         $conn->query("DELETE FROM users WHERE id = $user_id");
@@ -369,7 +369,7 @@ $user = $conn->query("SELECT * FROM users WHERE id = $user_id")->fetch_assoc();
     <div class="settings-container">
         <div class="settings-header">
             <h1>⚙️ Definições</h1>
-            <p>Gerencie sua conta, privacidade e preferências</p>
+            <p>Gere a tua conta, privacidade e preferências</p>
         </div>
 
         <?php if ($feedback): ?>
@@ -438,7 +438,7 @@ $user = $conn->query("SELECT * FROM users WHERE id = $user_id")->fetch_assoc();
                 <form method="POST">
                     <div class="form-group">
                         <label>Sobre ti (até 500 caracteres)</label>
-                        <textarea name="biography" placeholder="Conte um pouco sobre você, seus interesses em jogos, etc..."><?php echo htmlspecialchars($user['biography'] ?? ''); ?></textarea>
+                        <textarea name="biography" placeholder="Conta um pouco sobre ti, os teus interesses em jogos, etc..."><?php echo htmlspecialchars($user['biography'] ?? ''); ?></textarea>
                         <div class="current-value" id="bioCount">0/500</div>
                     </div>
                     <button type="submit" name="update_bio" class="btn">Guardar Biografia</button>
@@ -455,15 +455,15 @@ $user = $conn->query("SELECT * FROM users WHERE id = $user_id")->fetch_assoc();
                     <div class="social-inputs">
                         <div class="form-group">
                             <label>Twitter / X</label>
-                            <input type="text" name="twitter" placeholder="@seu_usuario" value="<?php echo htmlspecialchars($socials['twitter'] ?? ''); ?>">
+                            <input type="text" name="twitter" placeholder="@teu_utilizador" value="<?php echo htmlspecialchars($socials['twitter'] ?? ''); ?>">
                         </div>
                         <div class="form-group">
                             <label>Instagram</label>
-                            <input type="text" name="instagram" placeholder="@seu_usuario" value="<?php echo htmlspecialchars($socials['instagram'] ?? ''); ?>">
+                            <input type="text" name="instagram" placeholder="@teu_utilizador" value="<?php echo htmlspecialchars($socials['instagram'] ?? ''); ?>">
                         </div>
                         <div class="form-group">
                             <label>Discord</label>
-                            <input type="text" name="discord" placeholder="usuario#0000" value="<?php echo htmlspecialchars($socials['discord'] ?? ''); ?>">
+                            <input type="text" name="discord" placeholder="utilizador#0000" value="<?php echo htmlspecialchars($socials['discord'] ?? ''); ?>">
                         </div>
                     </div>
                     <button type="submit" name="update_socials" class="btn" style="margin-top: 15px;">Guardar Redes Sociais</button>
@@ -474,14 +474,14 @@ $user = $conn->query("SELECT * FROM users WHERE id = $user_id")->fetch_assoc();
         <!-- TAB: PRIVACIDADE -->
         <div id="privacy" class="tab-content">
             <div class="settings-section">
-                <h2>🔒 Configurações de Privacidade</h2>
+                <h2>🔒 Definições de Privacidade</h2>
                 <form method="POST">
                     <div class="form-group">
                         <div class="checkbox-group">
                             <input type="checkbox" name="profile_public" id="profile_public" <?php echo ($user['profile_public'] ?? 1) ? 'checked' : ''; ?>>
                             <label for="profile_public">Perfil Público</label>
                         </div>
-                        <p style="color: #888; font-size: 0.9rem; margin-top: 8px;">Permite que outros utilizadores vejam o seu perfil</p>
+                        <p style="color: #888; font-size: 0.9rem; margin-top: 8px;">Permite que outros utilizadores vejam o teu perfil</p>
                     </div>
 
                     <div class="form-group">
@@ -489,7 +489,7 @@ $user = $conn->query("SELECT * FROM users WHERE id = $user_id")->fetch_assoc();
                             <input type="checkbox" name="show_reviews" id="show_reviews" <?php echo ($user['show_reviews'] ?? 1) ? 'checked' : ''; ?>>
                             <label for="show_reviews">Mostrar Minhas Reviews</label>
                         </div>
-                        <p style="color: #888; font-size: 0.9rem; margin-top: 8px;">Permite que outros vejam as suas avaliações de jogos</p>
+                        <p style="color: #888; font-size: 0.9rem; margin-top: 8px;">Permite que outros vejam as tuas avaliações de jogos</p>
                     </div>
 
                     <button type="submit" name="update_privacy" class="btn">Guardar Privacidade</button>
@@ -503,7 +503,7 @@ $user = $conn->query("SELECT * FROM users WHERE id = $user_id")->fetch_assoc();
                 <h2>🎨 Tema</h2>
                 <form method="POST">
                     <div class="form-group">
-                        <label>Escolha o seu tema preferido</label>
+                        <label>Escolhe o teu tema preferido</label>
                         <select name="theme">
                             <option value="dark" <?php echo ($user['theme'] ?? 'dark') === 'dark' ? 'selected' : ''; ?>>Escuro (padrão)</option>
                             <option value="light" <?php echo ($user['theme'] ?? 'dark') === 'light' ? 'selected' : ''; ?>>Claro</option>
@@ -517,16 +517,16 @@ $user = $conn->query("SELECT * FROM users WHERE id = $user_id")->fetch_assoc();
         <!-- TAB: ZONA DE PERIGO -->
         <div id="danger" class="tab-content">
             <div class="settings-section" style="border-color: #ff6b6b;">
-                <h2 style="color: #ff6b6b;">⚠️ Deletar Conta</h2>
+                <h2 style="color: #ff6b6b;">⚠️ Eliminar Conta</h2>
                 <p style="color: #ccc; line-height: 1.6;">
-                    ⚠️ <strong>Aviso:</strong> Deletar sua conta é uma ação permanente. Todos os seus dados, reviews e informações de perfil serão apagados e não poderão ser recuperados.
+                    ⚠️ <strong>Aviso:</strong> Eliminar a tua conta é uma ação permanente. Todos os teus dados, reviews e informações de perfil serão apagados e não poderão ser recuperados.
                 </p>
-                <form method="POST" onsubmit="return confirm('Tem a certeza que deseja deletar sua conta permanentemente? Esta ação não pode ser desfeita!');">
+                <form method="POST" onsubmit="return confirm('Tens a certeza que pretendes eliminar a tua conta permanentemente? Esta ação não pode ser desfeita!');">
                     <div class="form-group">
-                        <label>Confirme sua password para deletar a conta</label>
-                        <input type="password" name="delete_password" required placeholder="Digite sua password">
+                        <label>Confirma a tua password para eliminar a conta</label>
+                        <input type="password" name="delete_password" required placeholder="Escreve a tua password">
                     </div>
-                    <button type="submit" name="delete_account" class="btn btn-danger">Deletar Permanentemente</button>
+                    <button type="submit" name="delete_account" class="btn btn-danger">Eliminar Permanentemente</button>
                 </form>
             </div>
         </div>
@@ -562,5 +562,3 @@ $user = $conn->query("SELECT * FROM users WHERE id = $user_id")->fetch_assoc();
     </script>
 
     <?php include 'includes/footer.php'; ?>
-</body>
-</html>

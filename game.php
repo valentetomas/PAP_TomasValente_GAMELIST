@@ -20,9 +20,13 @@ function translateToPortuguese($text) {
         curl_close($ch);
         
         if (isset($response['responseData']['translatedText'])) {
-            return $response['responseData']['translatedText'];
+            $translatedText = $response['responseData']['translatedText'];
+            // Verifica se contém aviso de limite
+            if (strpos($translatedText, 'MYMEMORY WARNING') === false) {
+                return $translatedText;
+            }
         }
-        return $text;
+        return $text; // Se erro ou limite, retorna original
     }
     
     // Se é muito longo, divide em partes
@@ -59,7 +63,14 @@ function translateToPortuguese($text) {
         curl_close($ch);
         
         if (isset($response['responseData']['translatedText'])) {
-            $translatedText .= $response['responseData']['translatedText'] . ' ';
+            $translated = $response['responseData']['translatedText'];
+            // Verifica se contém aviso de limite
+            if (strpos($translated, 'MYMEMORY WARNING') === false) {
+                $translatedText .= $translated . ' ';
+            } else {
+                // Se limite atingido, usa o original
+                $translatedText .= $chunk . ' ';
+            }
         } else {
             $translatedText .= $chunk . ' ';
         }
@@ -166,9 +177,6 @@ while($row = $dist_res->fetch_assoc()) {
 }
 ?>
 
-<!DOCTYPE html>
-<html lang="pt">
-<head>
 <style>
     :root {
         --primary-color: #00b4ff;
@@ -188,6 +196,7 @@ while($row = $dist_res->fetch_assoc()) {
         font-family: 'Inter', sans-serif;
         margin: 0; padding: 0;
         overflow-x: hidden;
+        padding-top: 0 !important;
     }
     
     /* SCROLLBAR PERSONALIZADA */
@@ -199,12 +208,14 @@ while($row = $dist_res->fetch_assoc()) {
     img, video, iframe { max-width: 100%; height: auto; display: block; border: none; }
     a { text-decoration: none; color: inherit; }
 
-    header, nav, .navbar { background: transparent !important; box-shadow: none !important; border: none !important; position: relative; z-index: 1000; }
+    /* NÃO MEXER NO HEADER - deixar o CSS em css/header.css fazer seu trabalho */
 
     /* HERO / BANNER */
     .hero-wrapper { 
-        position: absolute; top: 0; left: 0; width: 100%; height: 600px; 
+        position: relative; 
+        width: 100%; height: 600px; 
         z-index: 0; overflow: hidden;
+        margin-top: 0;
     }
     .hero-wrapper::after { 
         content: ""; position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; 
@@ -220,7 +231,8 @@ while($row = $dist_res->fetch_assoc()) {
     .main-container {
         position: relative; z-index: 10;
         width: 92%; max-width: 1150px;
-        margin: 0 auto; margin-top: 220px;
+        margin: 0 auto; 
+        margin-top: -200px;
         display: grid; grid-template-columns: 250px 1fr;
         gap: 40px; padding-bottom: 50px;
     }
@@ -547,7 +559,7 @@ while($row = $dist_res->fetch_assoc()) {
                     <?php endforeach; ?>
                 </div>
             <?php else: ?>
-                <a href="login.php" style="display:block; text-align:center; background:#222; padding:15px; border-radius:8px; color:#fff; text-decoration:none;">Login para salvar</a>
+                <a href="login.php" style="display:block; text-align:center; background:#222; padding:15px; border-radius:8px; color:#fff; text-decoration:none;">Inicia sessão para guardar</a>
             <?php endif; ?>
         </div>
 
@@ -903,6 +915,4 @@ while($row = $dist_res->fetch_assoc()) {
 </script>
 <?php endif; ?>
 
-</body>
-</html>
 <?php include 'includes/footer.php'; ?>

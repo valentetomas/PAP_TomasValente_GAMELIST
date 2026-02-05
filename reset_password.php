@@ -331,7 +331,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['token'])) {
                 <button type="submit">Alterar Password</button>
             </form>
         <?php elseif ($msgClass === "success"): ?>
-            <a href="login.php" class="btn">Ir para Login</a>
+            <a href="login.php" class="btn">Ir para iniciar sessão</a>
         <?php else: ?>
             <a href="forgot_password.php" class="btn">Pedir Novo Link</a>
         <?php endif; ?>

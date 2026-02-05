@@ -15,7 +15,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $msg = "⚠️ Email inválido!";
         $msgClass = "error";
     } elseif (strlen($password) < 6) {
-        $msg = "⚠️ A senha deve ter pelo menos 6 caracteres!";
+        $msg = "⚠️ A password deve ter pelo menos 6 caracteres!";
         $msgClass = "error";
     } else {
         $check = $conn->prepare("SELECT id FROM users WHERE email = ?");
@@ -53,11 +53,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $msg = "✅ Conta criada! Verifica o teu email para ativar a conta.";
                     $msgClass = "success";
                 } else {
-                    $msg = "⚠️ Conta criada, mas houve erro ao enviar email de verificação. <a href='login.php'>Tentar login</a>";
+                    $msg = "⚠️ Conta criada, mas houve erro ao enviar email de verificação. <a href='login.php'>Tentar iniciar sessão</a>";
                     $msgClass = "warning";
                 }
             } else {
-                $msg = "❌ Erro ao criar conta. Tente novamente mais tarde.";
+                $msg = "❌ Erro ao criar conta. Tenta novamente mais tarde.";
                 $msgClass = "error";
             }
         }

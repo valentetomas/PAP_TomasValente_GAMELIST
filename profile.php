@@ -1188,5 +1188,3 @@ avatarInput.addEventListener('change', function(e) {
 </script>
 
 <?php include 'includes/footer.php'; ?>
-</body>
-</html>

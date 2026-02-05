@@ -1,0 +1,205 @@
+:root {
+    --bkd-bg: rgba(22, 22, 22, 0.6); /* Fundo semi-transparente */
+    --bkd-input: #242629;
+    --bkd-text: #ffffff;
+    --bkd-text-muted: #999999;
+    --bkd-accent: #ff3366;
+}
+
+body {
+    padding-top: 0; /* REMOVIDO: Agora o banner cola no topo da página */
+    margin: 0;
+    background-color: #0b0c0f;
+}
+
+/* --- NAVBAR --- */
+.bkd-navbar {
+    /* Gradiente suave do preto para transparente, igual ao Backloggd */
+    background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 70%, transparent 100%);
+    height: 70px; /* Um pouco mais alto para respirar */
+    padding: 0;
+    border-bottom: none; /* Remove a linha de baixo para fundir com o banner */
+    transition: background 0.3s ease;
+}
+
+/* Opcional: Se quiseres que fique preto sólido ao fazer scroll, precisas de JS. 
+   Por enquanto, deixamos transparente/gradiente fixo para colar com o banner. */
+
+/* Logo */
+.bkd-brand {
+    font-family: 'Inter', sans-serif;
+    font-weight: 900;
+    font-size: 1.5rem;
+    color: #fff !important;
+    letter-spacing: -1px;
+    margin-right: 25px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5); /* Sombra para leitura sobre imagens */
+}
+
+/* Links de Navegação */
+.bkd-nav-links .nav-link {
+    color: rgba(255, 255, 255, 0.8) !important;
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 0 12px;
+    transition: color 0.2s;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+.bkd-nav-links .nav-link:hover {
+    color: #fff !important;
+}
+
+/* --- BARRA DE PESQUISA --- */
+.bkd-search-wrapper {
+    position: relative;
+    width: 250px;
+    transition: width 0.3s;
+}
+.bkd-search-wrapper:focus-within {
+    width: 320px;
+}
+
+.bkd-search-input {
+    width: 100%;
+    /* Input com leve transparência para se misturar */
+    background-color: rgba(36, 38, 41, 0.8); 
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    padding: 7px 10px 7px 35px;
+    color: #fff;
+    font-size: 0.9rem;
+    outline: none;
+    transition: all 0.2s;
+    backdrop-filter: blur(5px);
+}
+
+.bkd-search-input.active {
+    background-color: #fff;
+    color: #000;
+    border-color: #fff;
+}
+
+/* Garante que o container é a referência para o posicionamento */
+.bkd-search-wrapper {
+    position: relative; /* Obrigatório para o absolute funcionar */
+    width: 250px;
+    transition: width 0.3s;
+}
+
+/* O estilo do ícone corrigido */
+.search-icon {
+    position: absolute;
+    left: 12px;             /* Distância da esquerda */
+    top: 50%;
+    transform: translateY(-50%);
+    color: #888;           /* Cor cinzenta visível */
+    font-size: 0.9rem;
+    pointer-events: none;   /* Permite clicar no input "através" do ícone */
+    z-index: 10;            /* FORÇA O ÍCONE A FICAR POR CIMA */
+    transition: color 0.2s;
+}
+
+/* Quando clicas no input, o ícone muda de cor (só funciona se o ícone estiver DEPOIS do input no HTML) */
+.bkd-search-input.active ~ .search-icon, 
+.bkd-search-input:focus ~ .search-icon {
+    color: #000;
+}
+
+/* Resultados da Pesquisa */
+.bkd-search-results {
+    display: none;
+    position: absolute;
+    top: 100%; left: 0; width: 100%;
+    background: #18181b;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    margin-top: 5px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    z-index: 1000;
+}
+
+.bkd-result-item {
+    display: flex; gap: 10px; align-items: center;
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    cursor: pointer;
+}
+.bkd-result-item:hover { background: rgba(255,255,255,0.1); }
+.bkd-result-img { width: 32px; height: 45px; object-fit: cover; border-radius: 3px; }
+.bkd-result-info .name { font-size: 0.85rem; font-weight: 700; color: #fff; }
+.bkd-result-info .meta { font-size: 0.75rem; color: #888; }
+
+/* --- ÁREA DO USER --- */
+.bkd-login-link {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-right: 15px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+.bkd-login-link:hover { text-decoration: underline; }
+
+.bkd-signup-btn {
+    background-color: #fff;
+    color: #000;
+    font-weight: 700;
+    text-decoration: none;
+    padding: 6px 18px;
+    border-radius: 3px;
+    font-size: 0.9rem;
+    transition: opacity 0.2s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+.bkd-signup-btn:hover { opacity: 0.9; }
+
+.bkd-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255,255,255,0.2);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+.profile-trigger:hover .bkd-avatar { border-color: #fff; }
+
+.bkd-dropdown {
+    background: #18181b;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    margin-top: 10px;
+}
+.bkd-dropdown .dropdown-item { color: #ccc; font-size: 0.9rem; padding: 8px 20px; }
+.bkd-dropdown .dropdown-item:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+/* --- CORREÇÃO NOME DO UTILIZADOR --- */
+/* Seleciona o primeiro item da lista (o nome) e força a cor */
+.bkd-dropdown li:first-child {
+    color: #bbbbbb !important; /* Cinzento claro */
+    font-size: 0.75rem;        /* Tamanho ligeiramente menor */
+    letter-spacing: 1px;       /* Espaçamento entre letras para ficar elegante */
+    margin-bottom: 5px;        /* Espaço extra antes dos links */
+}
+
+/* Opcional: Se preferires branco puro, usa esta linha em vez da de cima: */
+/* color: #ffffff !important; */
+
+/* Mobile Responsive */
+@media (max-width: 991px) {
+    .bkd-navbar { 
+        height: auto; 
+        padding: 10px 0; 
+        background: #161616; /* Em mobile, fundo preto sólido é melhor para leitura */
+    }
+    body { padding-top: 70px; } /* Em mobile, voltamos a dar espaço */
+    
+    .right-section {
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    .bkd-search-wrapper, .bkd-search-wrapper:focus-within { width: 100%; }
+    .bkd-nav-links { margin-top: 10px; }
+}

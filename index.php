@@ -1,450 +1,472 @@
 <?php
 include 'includes/header.php';
 ?>
-<title>GameList - Explora Jogos</title>
+<title>GameList - Descobre o teu próximo jogo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
 <style>
+    :root {
+        --bg-dark: #0b0c0f;
+        --surface: #16171c;
+        --accent: #ff3366; 
+        --text-main: #ffffff;
+        --text-muted: #9ca3af;
+    }
+
     body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, sans-serif;
-      background: linear-gradient(180deg, #0b0b0b, #151515);
-      color: #eee;
+        margin: 0;
+        font-family: 'Inter', sans-serif;
+        background-color: var(--bg-dark);
+        color: var(--text-main);
+        overflow-x: hidden;
     }
 
+    /* --- 1. NOVO BANNER ESTILO BACKLOGGD --- */
+    .top-banner-backlog {
+        position: relative;
+        width: 100%;
+        height: 550px;
+        overflow: hidden;
+        background-color: var(--bg-dark);
+        margin-bottom: 0;
+    }
+
+    /* Container das capas com máscara de desvanecimento */
+    .banner-bg-container {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        z-index: 1;
+        -webkit-mask-image: linear-gradient(to bottom, black 10%, transparent 95%);
+        mask-image: linear-gradient(to bottom, black 10%, transparent 95%);
+    }
+
+    /* A Grid de capas animada */
+    .banner-game-covers {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 15px;
+        width: 110%; 
+        margin-left: -5%;
+        opacity: 0.4;
+        transform: rotate(-2deg) scale(1.05);
+    }
+
+    .banner-cover {
+        width: 100%;
+        border-radius: 6px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        aspect-ratio: 2/3; 
+        object-fit: cover;
+        animation: scrollUp 60s linear infinite;
+        will-change: transform;
+    }
+
+    .banner-cover:nth-child(2n) { animation-duration: 75s; margin-top: -40px; }
+    .banner-cover:nth-child(3n) { animation-duration: 55s; margin-top: 20px; }
+    .banner-cover:nth-child(5n) { animation-duration: 85s; }
+
+    @keyframes scrollUp {
+        0% { transform: translateY(0); }
+        100% { transform: translateY(-400px); }
+    }
+
+    /* Conteúdo Texto */
+    .banner-content-wrapper {
+        position: relative;
+        z-index: 10;
+        height: 100%;
+        max-width: 1100px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        padding: 60px 20px;
+        background: radial-gradient(circle at bottom, rgba(11,12,15, 0.8) 0%, rgba(11,12,15,0) 60%);
+    }
+
+    .banner-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        flex-wrap: wrap;
+        gap: 30px;
+        padding-bottom: 20px;
+    }
+
+    .banner-logo {
+        font-size: 3.8rem;
+        font-weight: 900;
+        letter-spacing: -2px;
+        line-height: 1;
+        margin: 0;
+        text-shadow: 0 5px 30px rgba(0,0,0,0.9);
+    }
+    
+    .banner-logo span { color: var(--accent); }
+
+    .banner-tagline {
+        font-size: 1.1rem;
+        color: #ccc;
+        margin: 10px 0 0 0; /* Margem ajustada já que não há stats */
+        text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        font-weight: 500;
+    }
+
+    .banner-cta-box { text-align: right; }
+    
+    .btn-create-account {
+        padding: 14px 35px;
+        font-size: 1rem;
+        font-weight: 700;
+        border-radius: 50px;
+        background: #fff;
+        color: #000;
+        text-decoration: none;
+        box-shadow: 0 0 20px rgba(255,255,255,0.15);
+        transition: transform 0.2s, background 0.2s;
+        display: inline-block;
+    }
+    .btn-create-account:hover {
+        transform: scale(1.05);
+        background: var(--accent);
+        color: #fff;
+        box-shadow: 0 0 30px rgba(255, 51, 102, 0.4);
+    }
+
+    /* --- 2. HERO SLIDER CINEMÁTICO --- */
+    #hero-slider {
+        position: relative;
+        width: 100%;
+        height: 500px;
+        background: #000;
+        overflow: hidden;
+        margin-bottom: 40px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    }
+
+    .hero-slide {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        opacity: 0; transition: opacity 1s ease-in-out;
+        display: flex; align-items: center; justify-content: center;
+        visibility: hidden;
+    }
+    .hero-slide.active { opacity: 1; visibility: visible; z-index: 10; }
+
+    .hero-backdrop {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        object-fit: cover; filter: blur(8px) brightness(0.4);
+        transform: scale(1.1); z-index: 1;
+    }
+
+    .hero-content {
+        position: relative; z-index: 2; width: 100%; max-width: 1100px;
+        padding: 0 20px; display: grid; grid-template-columns: 260px 1fr;
+        gap: 50px; align-items: center; margin-top: 40px;
+    }
+
+    .hero-poster {
+        width: 260px; aspect-ratio: 3/4; border-radius: 12px;
+        box-shadow: 0 25px 50px rgba(0,0,0,0.8);
+        border: 1px solid rgba(255,255,255,0.15);
+        object-fit: cover; transform: translateY(30px); opacity: 0;
+        transition: transform 0.8s ease-out 0.2s, opacity 0.8s ease-out 0.2s;
+    }
+    .hero-slide.active .hero-poster { transform: translateY(0); opacity: 1; }
+
+    .hero-info {
+        color: #fff; transform: translateY(30px); opacity: 0;
+        transition: transform 0.8s ease-out 0.4s, opacity 0.8s ease-out 0.4s;
+    }
+    .hero-slide.active .hero-info { transform: translateY(0); opacity: 1; }
+
+    .trending-badge {
+        background: var(--accent); color: white; padding: 6px 14px;
+        border-radius: 20px; font-size: 0.85rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 1px; display: inline-block;
+        margin-bottom: 15px; box-shadow: 0 4px 15px rgba(255, 51, 102, 0.4);
+    }
+
+    .hero-title {
+        font-size: 3.5rem; font-weight: 900; line-height: 1.1;
+        margin: 0 0 20px 0; text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+    }
+
+    .hero-meta {
+        font-size: 1.1rem; color: #ddd; margin-bottom: 30px;
+        display: flex; gap: 15px; align-items: center;
+    }
+
+    .btn-hero {
+        padding: 14px 35px; background: #fff; color: #000; font-weight: 800;
+        border-radius: 8px; text-decoration: none;
+        display: inline-flex; align-items: center; gap: 10px;
+        transition: transform 0.2s, background 0.2s; font-size: 1rem;
+    }
+    .btn-hero:hover { transform: scale(1.05); background: #f0f0f0; }
+
+    .hero-dots {
+        position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+        display: flex; gap: 10px; z-index: 20;
+    }
+    .hero-dot {
+        width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3);
+        cursor: pointer; transition: 0.3s;
+    }
+    .hero-dot.active { background: #fff; transform: scale(1.3); }
+
+
+    /* --- LAYOUT PRINCIPAL --- */
     main {
-      max-width: 1200px;
-      margin: 40px auto;
-      padding: 0 20px;
+        max-width: 1100px; margin: 0 auto; padding: 0 20px 80px 20px;
     }
 
-    h1 {
-      color: #00bfff;
-      font-size: 2.5rem;
-      text-align: center;
-      margin-bottom: 30px;
+    /* Section Headers */
+    .section-header {
+        display: flex; justify-content: space-between; align-items: flex-end;
+        margin-bottom: 25px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;
     }
-
-    .search-bar {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 30px;
-      gap: 10px;
+    .section-title { font-size: 1.8rem; font-weight: 800; margin: 0; position: relative; }
+    .section-title::after {
+        content: ''; position: absolute; bottom: -16px; left: 0;
+        width: 60px; height: 3px; background: var(--accent);
     }
+    .see-more { color: var(--text-muted); font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: 0.2s; }
+    .see-more:hover { color: #fff; }
 
-    .search-bar input {
-      width: 300px;
-      padding: 12px 15px;
-      border-radius: 8px;
-      border: none;
-      font-size: 16px;
-      background: #222;
-      color: #eee;
-    }
-
-    .search-bar input::placeholder {
-      color: #aaa;
-    }
-
-    .search-bar button {
-      padding: 12px 20px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-      color: #fff;
-      background: linear-gradient(135deg, #00bfff, #0080ff);
-      transition: all 0.2s ease;
-    }
-
-    .search-bar button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0,191,255,0.4);
-    }
-
-    #results {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 20px;
+    /* Grid de Jogos */
+    .games-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 20px;
     }
 
     .game-card {
-      background: #1f1f1f;
-      border-radius: 12px;
-      overflow: hidden;
-      text-align: center;
-      transition: transform 0.2s, box-shadow 0.2s;
-      cursor: pointer;
+        position: relative; aspect-ratio: 3/4; border-radius: 12px;
+        overflow: hidden; background: #222; cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s;
     }
-
     .game-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 20px rgba(0,191,255,0.4);
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.5); z-index: 5;
+    }
+    .game-card img { width: 100%; height: 100%; object-fit: cover; transition: filter 0.3s; }
+    .game-card:hover img { filter: brightness(0.3); }
+
+    .card-info {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        padding: 20px; display: flex; flex-direction: column; justify-content: flex-end;
+        opacity: 0; transition: opacity 0.3s;
+    }
+    .game-card:hover .card-info { opacity: 1; }
+    .card-title { font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: 5px; }
+    .card-meta { font-size: 0.8rem; color: #ccc; font-weight: 600; }
+    .metacritic-badge {
+        position: absolute; top: 10px; right: 10px;
+        background: rgba(0,0,0,0.8); color: #6c3;
+        padding: 4px 8px; border-radius: 6px; font-weight: 800; font-size: 0.8rem;
+        border: 1px solid rgba(102, 204, 51, 0.3);
     }
 
-    .game-card img {
-      width: 100%;
-      height: 220px;
-      object-fit: cover;
+    @media (max-width: 900px) {
+        .banner-header { flex-direction: column; text-align: center; justify-content: center; }
+        .banner-left, .banner-cta-box { width: 100%; text-align: center; }
+        .hero-content { grid-template-columns: 1fr; text-align: center; }
+        .hero-poster { display: none; }
+        .games-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
     }
+</style>
 
-    .game-card p {
-      margin: 10px 0;
-      font-weight: bold;
-      color: #00bfff;
-    }
-
-    #carousel {
-      max-width: 1200px;
-      margin: 40px auto 0 auto;
-      position: relative;
-    }
-
-    #carousel-inner {
-      overflow: hidden;
-      border-radius: 16px;
-    }
-
-    .carousel-slide {
-      display: none;
-      position: relative;
-    }
-
-    .carousel-slide img {
-      width: 100%;
-      height: 400px;
-      object-fit: cover;
-    }
-
-    .carousel-slide div {
-      position: absolute;
-      bottom: 30px;
-      left: 30px;
-      background: rgba(0, 0, 0, 0.6);
-      color: #fff;
-      padding: 16px 32px;
-      border-radius: 12px;
-      font-size: 2rem;
-      font-weight: bold;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-    }
-
-    #carousel-prev, #carousel-next {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      background: linear-gradient(135deg, #00bfff, #8a2be2);
-      color: #fff;
-      border: none;
-      border-radius: 50%;
-      width: 48px;
-      height: 48px;
-      font-size: 2rem;
-      cursor: pointer;
-      z-index: 2;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.2s, transform 0.2s;
-      opacity: 0.85;
-    }
-    #carousel-prev:hover, #carousel-next:hover {
-      background: linear-gradient(135deg, #8a2be2, #00bfff);
-      transform: translateY(-50%) scale(1.12);
-      opacity: 1;
-    }
-    #carousel-prev {
-      left: 18px;
-    }
-    #carousel-next {
-      right: 18px;
-    }
-    #carousel-prev svg, #carousel-next svg {
-      width: 28px;
-      height: 28px;
-      display: block;
-    }
-
-    @media (max-width: 768px) {
-      .search-bar {
-        flex-direction: column;
-        align-items: center;
-      }
-      
-      .search-bar input {
-        width: 100%;
-      }
-    }
-  </style>
-</head>
-
-<body>
-
-  <div id="carousel" style="max-width:1200px;margin:40px auto 0 auto;position:relative;">
-    <div id="carousel-inner" style="overflow:hidden;border-radius:16px;">
-      <!-- Slides serão inseridos aqui -->
+<div class="top-banner-backlog">
+    <div class="banner-bg-container">
+        <div class="banner-game-covers" id="banner-covers"></div>
     </div>
-    <button id="carousel-prev">
-      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="12" cy="12" r="12" fill="none"/>
-        <path d="M15 6L9 12L15 18" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
-    <button id="carousel-next">
-      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="12" cy="12" r="12" fill="none"/>
-        <path d="M9 6L15 12L9 18" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
-  </div>
 
-  <main>
-    <h1>Explora Jogos</h1>
+    <div class="banner-content-wrapper">
+        <div class="banner-header">
+            <div class="banner-left">
+                <h1 class="banner-logo">GameList<span>.</span></h1>
+                <p class="banner-tagline">Descobre, joga, acompanha a tua coleção.</p>
+                </div>
 
-    <section style="margin-bottom:24px;">
-      <form id="filters-form" style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;align-items:center;margin-bottom:18px;">
-        <select id="genre-filter" style="padding:10px 16px;border-radius:8px;background:#222;color:#fff;border:none;font-size:1rem;">
-          <option value="">Todos os Géneros</option>
-        </select>
-        <select id="platform-filter" style="padding:10px 16px;border-radius:8px;background:#222;color:#fff;border:none;font-size:1rem;">
-          <option value="">Todas as Plataformas</option>
-        </select>
-        <select id="year-filter" style="padding:10px 16px;border-radius:8px;background:#222;color:#fff;border:none;font-size:1rem;">
-          <option value="">Todos os Anos</option>
-        </select>
-        <select id="order-filter" style="padding:10px 16px;border-radius:8px;background:#222;color:#fff;border:none;font-size:1rem;">
-          <option value="-rating">Melhores Avaliados</option>
-          <option value="released">Mais Recentes</option>
-          <option value="-added">Mais Populares</option>
-          <option value="-metacritic">Melhor Metacritic</option>
-        </select>
-        <button type="button" class="btn" onclick="applyFilters()">Filtrar</button>
-      </form>
+            <div class="banner-cta-box" id="banner-cta">
+                <a href="register.php" class="btn-create-account">Sign up</a>
+                <div style="margin-top: 15px; font-size: 0.9rem; color: #aaa;">
+                    Já tens conta? <a href="login.php" style="color:white; text-decoration: underline;">Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="hero-slider">
+    <div style="display:flex; justify-content:center; align-items:center; height:100%; color:#555;">
+        <i class="fa-solid fa-circle-notch fa-spin fa-2x"></i>
+    </div>
+</div>
+
+<main>
+    <section style="margin-bottom: 60px;">
+        <div class="section-header">
+            <h2 class="section-title">Trending Agora</h2>
+            <a href="#" class="see-more">Ver Top 100 <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+        <div id="featured-list" class="games-grid"></div>
     </section>
 
-    <section id="featured-games" style="margin-bottom:40px;">
-      <h2 style="color:#00bfff;text-align:center;margin-bottom:18px;">Jogos em Destaque</h2>
-      <div id="featured-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:20px;"></div>
+    <section>
+        <div class="section-header">
+            <h2 class="section-title">Em Breve</h2>
+            <a href="upcoming.php" class="see-more">Calendário Completo <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+        <div id="upcoming-list" class="games-grid"></div>
     </section>
+</main>
 
-    <section id="upcoming-games" style="margin-bottom:40px;">
-      <h2 style="color:#00bfff;text-align:center;margin-bottom:18px;">Próximos Lançamentos</h2>
-      <div id="upcoming-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:20px;"></div>
-      <div style="text-align:center;margin-top:24px;">
-        <a href="upcoming.php" class="btn" style="display:inline-block;padding:12px 32px;background:linear-gradient(90deg,#00bfff,#0080ff);color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;transition:transform 0.2s;">Ver Mais Lançamentos</a>
-      </div>
-    </section>
-
-    
-  </main>
-
-  <script>
+<script>
 const apiKey = '5fd330b526034329a8f0d9b6676241c5';
 
-// Carregar carrossel de banners dos jogos mais populares
-async function loadCarousel() {
-  const carouselInner = document.getElementById('carousel-inner');
-  carouselInner.innerHTML = '<div style="text-align:center;color:#aaa;padding:40px;">A carregar...</div>';
-  try {
-    // Jogos mais populares de 2025
-    const startDate = '2025-01-01';
-    const endDate = '2025-12-31';
-    const res = await fetch(`https://api.rawg.io/api/games?key=${apiKey}&ordering=-rating&page_size=5&dates=${startDate},${endDate}`);
-    const data = await res.json();
-    carouselInner.innerHTML = '';
-    data.results.forEach((game, idx) => {
-      const slide = document.createElement('div');
-      slide.className = 'carousel-slide';
-      slide.style.display = idx === 0 ? 'block' : 'none';
-      slide.style.position = 'relative';
-      slide.innerHTML = `
-        <a href="game.php?id=${game.id}" style="display:block;">
-          <img src="${game.background_image || 'https://via.placeholder.com/1200x400?text=Sem+Imagem'}" alt="${game.name}" style="width:100%;height:400px;object-fit:cover;">
-          <div style="position:absolute;bottom:30px;left:30px;background:rgba(0,0,0,0.6);color:#fff;padding:16px 32px;border-radius:12px;font-size:2rem;font-weight:bold;box-shadow:0 4px 16px rgba(0,0,0,0.3);">
-            ${game.name}
-          </div>
-        </a>
-      `;
-      carouselInner.appendChild(slide);
-    });
-  } catch (err) {
-    carouselInner.innerHTML = '<div style="text-align:center;color:#ff4444;padding:40px;">Erro ao carregar carrossel.</div>';
-  }
-}
+// --- A. CARREGAR CAPAS DO BANNER (BACKLOGGD STYLE) ---
+async function loadBannerCovers() {
+    try {
+        const res = await fetch(`https://api.rawg.io/api/games?key=${apiKey}&page_size=40&ordering=-added`);
+        const data = await res.json();
+        const container = document.getElementById('banner-covers');
+        
+        container.innerHTML = '';
 
-// Carrossel navegação + autoplay
-let currentSlide = 0;
-function showSlide(idx) {
-  const slides = document.querySelectorAll('.carousel-slide');
-  if (!slides.length) return;
-  slides.forEach((slide, i) => {
-    slide.style.display = i === idx ? 'block' : 'none';
-  });
-}
-document.getElementById('carousel-prev').onclick = function() {
-  const slides = document.querySelectorAll('.carousel-slide');
-  currentSlide = (currentSlide - 1 + slides.length) % slides.length;
-  showSlide(currentSlide);
-};
-document.getElementById('carousel-next').onclick = function() {
-  const slides = document.querySelectorAll('.carousel-slide');
-  currentSlide = (currentSlide + 1) % slides.length;
-  showSlide(currentSlide);
-};
-// Autoplay
-setInterval(function() {
-  const slides = document.querySelectorAll('.carousel-slide');
-  if (slides.length) {
-    currentSlide = (currentSlide + 1) % slides.length;
-    showSlide(currentSlide);
-  }
-}, 4000);
-
-// Carregar jogos em destaque (melhores avaliados no Metacritic)
-async function loadFeaturedGames() {
-  const featuredDiv = document.getElementById('featured-list');
-  featuredDiv.innerHTML = '<p style="text-align:center;color:#aaa;">A carregar...</p>';
-  try {
-    const res = await fetch(`https://api.rawg.io/api/games?key=${apiKey}&ordering=-metacritic&page_size=15`);
-    const data = await res.json();
-    featuredDiv.innerHTML = '';
-    
-    // Filtrar jogos com Metacritic >= 85 E que tenham imagem
-    const filtered = data.results.filter(game => 
-      game.metacritic && 
-      game.metacritic >= 85 && 
-      game.background_image
-    ).slice(0, 6);
-    
-    filtered.forEach(game => {
-      const card = document.createElement('div');
-      card.classList.add('game-card');
-      card.innerHTML = `
-        <a href="game.php?id=${game.id}">
-          <img src="${game.background_image}" alt="${game.name}">
-          <p>${game.name}</p>
-        </a>
-      `;
-      featuredDiv.appendChild(card);
-    });
-  } catch (err) {
-    console.error('Erro:', err);
-    featuredDiv.innerHTML = '<p style="text-align:center;color:#ff4444;">Erro ao carregar jogos em destaque.</p>';
-  }
-}
-
-// Carregar próximos lançamentos
-async function loadUpcomingGames() {
-  const upcomingDiv = document.getElementById('upcoming-list');
-  upcomingDiv.innerHTML = '<p style="text-align:center;color:#aaa;">A carregar...</p>';
-  try {
-    // Próximos 6 meses
-    const today = new Date();
-    const next6Months = new Date(today.getFullYear(), today.getMonth()+6, today.getDate());
-    const startDate = today.toISOString().split('T')[0];
-    const endDate = next6Months.toISOString().split('T')[0];
-    const upcomingRes = await fetch(`https://api.rawg.io/api/games?key=${apiKey}&dates=${startDate},${endDate}&ordering=released&page_size=6`);
-    const upcomingData = await upcomingRes.json();
-    upcomingDiv.innerHTML = '';
-    upcomingData.results.forEach(game => {
-      const card = document.createElement('div');
-      card.classList.add('game-card');
-      card.innerHTML = `
-        <a href="game.php?id=${game.id}">
-          <img src="${game.background_image || 'https://via.placeholder.com/300x220?text=Sem+Imagem'}" alt="${game.name}">
-          <p>${game.name}</p>
-        </a>
-      `;
-      upcomingDiv.appendChild(card);
-    });
-  } catch (err) {
-    upcomingDiv.innerHTML = '<p style="text-align:center;color:#ff4444;">Erro ao carregar lançamentos.</p>';
-  }
-}
-
-// Carregar géneros, plataformas e anos para filtros
-async function loadFilters() {
-  // Géneros
-  const genreSel = document.getElementById('genre-filter');
-  const genreRes = await fetch(`https://api.rawg.io/api/genres?key=${apiKey}`);
-  const genreData = await genreRes.json();
-  genreData.results.forEach(g => {
-    const opt = document.createElement('option');
-    opt.value = g.slug;
-    opt.textContent = g.name;
-    genreSel.appendChild(opt);
-  });
-  // Plataformas
-  const platSel = document.getElementById('platform-filter');
-  const platRes = await fetch(`https://api.rawg.io/api/platforms?key=${apiKey}`);
-  const platData = await platRes.json();
-  platData.results.forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p.id;
-    opt.textContent = p.name;
-    platSel.appendChild(opt);
-  });
-  // Anos
-  const yearSel = document.getElementById('year-filter');
-  const currentYear = new Date().getFullYear();
-  for(let y=currentYear; y>=2000; y--) {
-    const opt = document.createElement('option');
-    opt.value = y;
-    opt.textContent = y;
-    yearSel.appendChild(opt);
-  }
-}
-
-// Aplicar filtros aos jogos em destaque e lançamentos
-async function applyFilters(forceLoad=false) {
-  const genre = document.getElementById('genre-filter').value;
-  const platform = document.getElementById('platform-filter').value;
-  const year = document.getElementById('year-filter').value;
-  const order = document.getElementById('order-filter').value;
-  // Jogos em destaque
-  const featuredDiv = document.getElementById('featured-list');
-  featuredDiv.innerHTML = '<p style="text-align:center;color:#aaa;">A carregar...</p>';
-  let url = `https://api.rawg.io/api/games?key=${apiKey}&ordering=${order}&page_size=6`;
-  if (genre) url += `&genres=${genre}`;
-  if (platform) url += `&platforms=${platform}`;
-  if (year) url += `&dates=${year}-01-01,${year}-12-31`;
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
-    featuredDiv.innerHTML = '';
-    if (!data.results || !data.results.length) {
-      featuredDiv.innerHTML = '<p style="text-align:center;color:#aaa;">Nenhum jogo encontrado.</p>';
-      return;
+        data.results.forEach(game => {
+            if (game.background_image) {
+                const img = document.createElement('img');
+                img.src = game.background_image.replace('/media/games/', '/media/crop/600/400/games/');
+                img.onerror = function() { this.src = game.background_image; };
+                img.className = 'banner-cover';
+                img.alt = game.name;
+                container.appendChild(img);
+            }
+        });
+    } catch (e) {
+        console.error('Erro ao carregar capas:', e);
     }
-    data.results.forEach(game => {
-      const card = document.createElement('div');
-      card.classList.add('game-card');
-      card.innerHTML = `
-        <a href="game.php?id=${game.id}">
-          <img src="${game.background_image || 'https://via.placeholder.com/300x220?text=Sem+Imagem'}" alt="${game.name}">
-          <p>${game.name}</p>
-        </a>
-      `;
-      featuredDiv.appendChild(card);
-    });
-  } catch (err) {
-    featuredDiv.innerHTML = '<p style="text-align:center;color:#ff4444;">Erro ao carregar jogos em destaque.</p>';
-  }
-  // Próximos lançamentos NÃO são afetados pelos filtros
-  if (forceLoad) {
-    loadUpcomingGames();
-  }
+}
+
+// --- B. VERIFICAR LOGIN ---
+function checkUserStatus() {
+    const isUserLoggedIn = <?php echo isset($user) && $user ? 'true' : 'false'; ?>;
+    if (isUserLoggedIn) {
+        const ctaContainer = document.getElementById('banner-cta');
+        if (ctaContainer) ctaContainer.style.display = 'none';
+    }
+}
+
+// --- C. CARREGAR HERO SLIDER (TOP 5) ---
+async function loadHero() {
+    const container = document.getElementById('hero-slider');
+    try {
+        const res = await fetch(`https://api.rawg.io/api/games?key=${apiKey}&ordering=-added&page_size=5&dates=2024-01-01,2025-12-31`);
+        const data = await res.json();
+        
+        container.innerHTML = '';
+        let dotsHtml = '<div class="hero-dots">';
+        
+        data.results.forEach((game, index) => {
+            const active = index === 0 ? 'active' : '';
+            const year = game.released ? game.released.split('-')[0] : 'TBA';
+            const genre = game.genres[0] ? game.genres[0].name : '';
+
+            const slide = document.createElement('div');
+            slide.className = `hero-slide ${active}`;
+            slide.dataset.index = index;
+            slide.innerHTML = `
+                <img src="${game.background_image}" class="hero-backdrop">
+                <div class="hero-content">
+                    <img src="${game.background_image}" class="hero-poster">
+                    <div class="hero-info">
+                        <div class="trending-badge"><i class="fa-solid fa-fire"></i> Trending #${index + 1}</div>
+                        <h1 class="hero-title">${game.name}</h1>
+                        <div class="hero-meta">
+                            <span>${year}</span><span>•</span><span>${genre}</span>
+                        </div>
+                        <a href="game.php?id=${game.id}" class="btn-hero"><i class="fa-solid fa-play"></i> Ver Detalhes</a>
+                    </div>
+                </div>
+            `;
+            container.appendChild(slide);
+            dotsHtml += `<div class="hero-dot ${active}" onclick="goToSlide(${index})"></div>`;
+        });
+        
+        dotsHtml += '</div>';
+        container.insertAdjacentHTML('beforeend', dotsHtml);
+        startSlider();
+    } catch (e) { console.error("Erro slider", e); }
+}
+
+let slideInterval;
+function startSlider() {
+    if(slideInterval) clearInterval(slideInterval);
+    slideInterval = setInterval(() => nextSlide(), 6000);
+}
+function nextSlide() {
+    const slides = document.querySelectorAll('.hero-slide');
+    let current = document.querySelector('.hero-slide.active');
+    let curIndex = parseInt(current.dataset.index);
+    let nextIndex = (curIndex + 1) % slides.length;
+    goToSlide(nextIndex);
+}
+function goToSlide(index) {
+    const slides = document.querySelectorAll('.hero-slide');
+    const dots = document.querySelectorAll('.hero-dot');
+    slides.forEach(s => s.classList.remove('active'));
+    dots.forEach(d => d.classList.remove('active'));
+    slides[index].classList.add('active');
+    dots[index].classList.add('active');
+    startSlider();
+}
+
+// --- D. FUNÇÃO AUXILIAR: CARD ---
+function createCard(game) {
+    const card = document.createElement('div');
+    card.className = 'game-card';
+    card.onclick = () => window.location.href = `game.php?id=${game.id}`;
+    const meta = game.metacritic ? `<div class="metacritic-badge">${game.metacritic}</div>` : '';
+    const year = game.released ? game.released.split('-')[0] : 'TBA';
+    const genre = game.genres[0] ? game.genres[0].name : '';
+    card.innerHTML = `<img src="${game.background_image || 'https://via.placeholder.com/300x400'}" loading="lazy">${meta}<div class="card-info"><div class="card-title">${game.name}</div><div class="card-meta">${year} • ${genre}</div></div>`;
+    return card;
+}
+
+// --- E. CARREGAR LISTAS PRINCIPAIS ---
+async function applyFilters() {
+    const container = document.getElementById('featured-list');
+    try {
+        const res = await fetch(`https://api.rawg.io/api/games?key=${apiKey}&page_size=12&ordering=-added`);
+        const data = await res.json();
+        container.innerHTML = '';
+        data.results.forEach(game => { if(game.background_image) container.appendChild(createCard(game)); });
+    } catch (e) { container.innerHTML = 'Erro ao carregar lista.'; }
+}
+
+async function loadUpcoming() {
+    const container = document.getElementById('upcoming-list');
+    const today = new Date().toISOString().split('T')[0];
+    const nextYear = new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0];
+    try {
+        const res = await fetch(`https://api.rawg.io/api/games?key=${apiKey}&dates=${today},${nextYear}&ordering=released&page_size=6`);
+        const data = await res.json();
+        container.innerHTML = '';
+        data.results.forEach(game => { if(game.background_image) container.appendChild(createCard(game)); });
+    } catch (e) { console.error(e); }
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  loadCarousel();
-  loadFilters();
-  loadFeaturedGames();
-  loadUpcomingGames();
+    loadBannerCovers();
+    checkUserStatus();
+    loadHero();
+    applyFilters();
+    loadUpcoming();
 });
-  </script>
+</script>
 
-  <?php include 'includes/footer.php'; ?>
+<?php include 'includes/footer.php'; ?>
 </body>
 </html>

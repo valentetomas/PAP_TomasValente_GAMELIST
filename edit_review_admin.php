@@ -48,14 +48,13 @@ include 'includes/header.php';
     <div class="container">
         <h1>Editar Review</h1>
         <p><strong>Jogo:</strong> <?php echo htmlspecialchars($review['game_name']); ?></p>
-        <p><strong>Usuário:</strong> <?php echo htmlspecialchars($conn->query("SELECT username FROM users WHERE id = " . $review['user_id'])->fetch_assoc()['username']); ?></p>
+        <p><strong>Utilizador:</strong> <?php echo htmlspecialchars($conn->query("SELECT username FROM users WHERE id = " . $review['user_id'])->fetch_assoc()['username']); ?></p>
         <form method="POST">
             <label for="rating">Nota (1-10):</label>
             <input type="number" id="rating" name="rating" min="1" max="10" value="<?php echo $review['rating']; ?>" required>
             <label for="comment">Comentário:</label>
             <textarea id="comment" name="comment" rows="5" required><?php echo htmlspecialchars($review['comment']); ?></textarea>
-            <button type="submit">Salvar Alterações</button>
+            <button type="submit">Guardar Alterações</button>
         </form>
     </div>
-</body>
-</html>
+<?php include 'includes/footer.php'; ?>
