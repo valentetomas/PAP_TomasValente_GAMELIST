@@ -38,6 +38,20 @@ try {
         exit;
     }
     
+    // Verificar tabelas opcionais (podem não existir em restores parciais)
+    $has_review_likes = false;
+    $has_review_comments = false;
+
+    $likes_table_check = $conn->query("SHOW TABLES LIKE 'review_likes'");
+    if ($likes_table_check && $likes_table_check->num_rows > 0) {
+        $has_review_likes = true;
+    }
+
+    $comments_table_check = $conn->query("SHOW TABLES LIKE 'review_comments'");
+    if ($comments_table_check && $comments_table_check->num_rows > 0) {
+        $has_review_comments = true;
+    }
+
     // Buscar as 4 reviews mais recentes com informação do utilizador e avatar
     $sql = "
         SELECT 
@@ -73,25 +87,33 @@ try {
     if ($result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
             // Contar likes reais
-            $likes_sql = "SELECT COUNT(*) as count FROM review_likes WHERE review_id = ?";
-            $likes_stmt = $conn->prepare($likes_sql);
-            if ($likes_stmt) {
-                $likes_stmt->bind_param("i", $row['id']);
-                $likes_stmt->execute();
-                $likes_result = $likes_stmt->get_result()->fetch_assoc();
-                $row['likes_count'] = $likes_result['count'] ?? 0;
+            if ($has_review_likes) {
+                $likes_sql = "SELECT COUNT(*) as count FROM review_likes WHERE review_id = ?";
+                $likes_stmt = $conn->prepare($likes_sql);
+                if ($likes_stmt) {
+                    $likes_stmt->bind_param("i", $row['id']);
+                    $likes_stmt->execute();
+                    $likes_result = $likes_stmt->get_result()->fetch_assoc();
+                    $row['likes_count'] = $likes_result['count'] ?? 0;
+                } else {
+                    $row['likes_count'] = 0;
+                }
             } else {
                 $row['likes_count'] = 0;
             }
             
             // Contar comentários reais
-            $comments_sql = "SELECT COUNT(*) as count FROM review_comments WHERE review_id = ?";
-            $comments_stmt = $conn->prepare($comments_sql);
-            if ($comments_stmt) {
-                $comments_stmt->bind_param("i", $row['id']);
-                $comments_stmt->execute();
-                $comments_result = $comments_stmt->get_result()->fetch_assoc();
-                $row['comments_count'] = $comments_result['count'] ?? 0;
+            if ($has_review_comments) {
+                $comments_sql = "SELECT COUNT(*) as count FROM review_comments WHERE review_id = ?";
+                $comments_stmt = $conn->prepare($comments_sql);
+                if ($comments_stmt) {
+                    $comments_stmt->bind_param("i", $row['id']);
+                    $comments_stmt->execute();
+                    $comments_result = $comments_stmt->get_result()->fetch_assoc();
+                    $row['comments_count'] = $comments_result['count'] ?? 0;
+                } else {
+                    $row['comments_count'] = 0;
+                }
             } else {
                 $row['comments_count'] = 0;
             }

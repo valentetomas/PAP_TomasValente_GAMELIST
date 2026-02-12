@@ -48,7 +48,8 @@ $body_class = $body_class ?? 'gamelist-body';
         <div class="collapse navbar-collapse" id="navbarMain">
             
             <ul class="navbar-nav me-auto mb-2 mb-lg-0 bkd-nav-links">
-                <li class="nav-item"><a class="nav-link" href="index.php">Jogos</a></li>
+                <li class="nav-item"><a class="nav-link" href="games.php">Jogos</a></li>
+                <li class="nav-item"><a class="nav-link" href="upcoming.php">Próximos Lançamentos</a></li>
             </ul>
 
             <div class="d-flex align-items-center gap-3 right-section">

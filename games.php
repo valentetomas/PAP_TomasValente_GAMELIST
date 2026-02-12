@@ -3,11 +3,11 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$page_title = 'Próximos Lançamentos - GameList';
+$page_title = 'Jogos - GameList';
 include 'includes/header.php';
 ?>
 
-<title>Próximos Lançamentos - GameList</title>
+<title>Jogos - GameList</title>
 
 <style>
     :root {
@@ -132,6 +132,7 @@ include 'includes/header.php';
         letter-spacing: 0.5px;
     }
 
+    .filter-input,
     .filter-select {
         width: 100%;
         background: #111319;
@@ -143,6 +144,7 @@ include 'includes/header.php';
         outline: none;
     }
 
+    .filter-input:focus,
     .filter-select:focus {
         border-color: var(--accent);
     }
@@ -203,6 +205,11 @@ include 'includes/header.php';
         pointer-events: none;
     }
 
+    @keyframes cardShimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
     .game-card:hover {
         transform: scale(1.05);
         z-index: 5;
@@ -215,8 +222,9 @@ include 'includes/header.php';
         height: 100%;
         object-fit: cover;
         display: block;
-        transition: opacity 0.25s ease, filter 0.3s ease;
+        transition: filter 0.3s ease;
         opacity: 0;
+        transition: opacity 0.25s ease, filter 0.3s ease;
         position: relative;
         z-index: 2;
     }
@@ -298,11 +306,6 @@ include 'includes/header.php';
         padding: 0 4px;
     }
 
-    @keyframes cardShimmer {
-        0% { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
-    }
-
     @media (max-width: 980px) {
         .layout {
             grid-template-columns: 1fr;
@@ -326,16 +329,16 @@ include 'includes/header.php';
 
 <main class="games-page">
     <div class="top-controls">
-        <div class="games-count" id="games-count">A carregar lançamentos...</div>
+        <div class="games-count" id="games-count">A carregar jogos...</div>
         <div class="controls-right">
             <button class="apply-filters-btn" id="toggle-filters">Mostrar filtros</button>
             <div class="sort-wrap">
                 <span>Sort by</span>
                 <select id="sort-order" class="sort-select">
-                    <option value="released" selected>Release Date</option>
                     <option value="trending">Trending</option>
                     <option value="popular">Popular</option>
                     <option value="rating">Top Rated</option>
+                    <option value="newest">Newest</option>
                     <option value="name">Name</option>
                 </select>
             </div>
@@ -347,27 +350,40 @@ include 'includes/header.php';
             <h2 class="filters-title">Filtros</h2>
 
             <div class="filter-group">
-                <label for="period-filter">Período</label>
-                <select id="period-filter" class="filter-select">
-                    <option value="" selected>Todos os próximos</option>
-                    <option value="1">Próximo mês</option>
-                    <option value="3">Próximos 3 meses</option>
-                    <option value="6">Próximos 6 meses</option>
-                    <option value="12">Próximo ano</option>
+                <label for="search">Pesquisar</label>
+                <input type="text" id="search" class="filter-input" placeholder="Nome do jogo">
+            </div>
+
+            <div class="filter-group">
+                <label for="genre">Género</label>
+                <select id="genre" class="filter-select">
+                    <option value="">Todos</option>
                 </select>
             </div>
 
             <div class="filter-group">
-                <label for="platform-filter">Plataforma</label>
-                <select id="platform-filter" class="filter-select">
+                <label for="platform">Plataforma</label>
+                <select id="platform" class="filter-select">
                     <option value="">Todas</option>
                 </select>
             </div>
 
             <div class="filter-group">
-                <label for="genre-filter">Género</label>
-                <select id="genre-filter" class="filter-select">
+                <label for="year">Ano</label>
+                <select id="year" class="filter-select">
                     <option value="">Todos</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="min-score">Metacritic mínimo</label>
+                <select id="min-score" class="filter-select">
+                    <option value="">Sem filtro</option>
+                    <option value="50">50+</option>
+                    <option value="60">60+</option>
+                    <option value="70">70+</option>
+                    <option value="80">80+</option>
+                    <option value="90">90+</option>
                 </select>
             </div>
 
@@ -399,13 +415,16 @@ include 'includes/header.php';
     const paginationEl = document.getElementById('pagination');
     const paginationWrapEl = document.getElementById('pagination-wrap');
     const sortSelect = document.getElementById('sort-order');
-    const periodSelect = document.getElementById('period-filter');
-    const platformSelect = document.getElementById('platform-filter');
-    const genreSelect = document.getElementById('genre-filter');
-
     const gamesLayout = document.getElementById('games-layout');
     const filtersPanel = document.getElementById('filters-panel');
     const toggleFiltersBtn = document.getElementById('toggle-filters');
+
+    const searchInput = document.getElementById('search');
+    const genreSelect = document.getElementById('genre');
+    const platformSelect = document.getElementById('platform');
+    const yearSelect = document.getElementById('year');
+    const minScoreSelect = document.getElementById('min-score');
+
     const applyBtn = document.getElementById('apply-filters');
     const resetBtn = document.getElementById('reset-filters');
 
@@ -415,19 +434,13 @@ include 'includes/header.php';
     let loading = false;
     let filtersLoaded = false;
     let activeRequestController = null;
-
     const gamesCache = new Map();
-
-    function formatDateLocal(date) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    }
 
     function getCachedData(key, ttl) {
         const item = gamesCache.get(key);
-        if (!item) return null;
+        if (!item) {
+            return null;
+        }
         if ((Date.now() - item.ts) > ttl) {
             gamesCache.delete(key);
             return null;
@@ -436,16 +449,23 @@ include 'includes/header.php';
     }
 
     function setCachedData(key, data) {
-        gamesCache.set(key, { ts: Date.now(), data });
+        gamesCache.set(key, {
+            ts: Date.now(),
+            data
+        });
     }
 
     function getLocalCache(key, ttl) {
         const raw = localStorage.getItem(key);
-        if (!raw) return null;
+        if (!raw) {
+            return null;
+        }
 
         try {
             const parsed = JSON.parse(raw);
-            if (!parsed || !parsed.ts || !Array.isArray(parsed.data)) return null;
+            if (!parsed || !parsed.ts || !Array.isArray(parsed.data)) {
+                return null;
+            }
             if ((Date.now() - parsed.ts) > ttl) {
                 localStorage.removeItem(key);
                 return null;
@@ -457,18 +477,33 @@ include 'includes/header.php';
     }
 
     function setLocalCache(key, data) {
-        localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
+        localStorage.setItem(key, JSON.stringify({
+            ts: Date.now(),
+            data
+        }));
+    }
+
+    function fillYears() {
+        const now = new Date().getFullYear();
+        for (let year = now; year >= 1980; year--) {
+            const option = document.createElement('option');
+            option.value = String(year);
+            option.textContent = String(year);
+            yearSelect.appendChild(option);
+        }
     }
 
     async function loadFilterOptions() {
-        if (filtersLoaded) return;
+        if (filtersLoaded) {
+            return;
+        }
 
         try {
-            const cachedGenres = getLocalCache('rawg_genres_cache_upcoming', FILTERS_CACHE_TTL);
-            const cachedPlatforms = getLocalCache('rawg_platforms_cache_upcoming', FILTERS_CACHE_TTL);
+            const cachedGenres = getLocalCache('rawg_genres_cache', FILTERS_CACHE_TTL);
+            const cachedPlatforms = getLocalCache('rawg_platforms_cache', FILTERS_CACHE_TTL);
 
-            let genres = cachedGenres || [];
-            let platforms = cachedPlatforms || [];
+            let genresData = { results: cachedGenres || [] };
+            let platformsData = { results: cachedPlatforms || [] };
 
             if (!cachedGenres || !cachedPlatforms) {
                 const [genresRes, platformsRes] = await Promise.all([
@@ -476,29 +511,34 @@ include 'includes/header.php';
                     fetch(`https://api.rawg.io/api/platforms/lists/parents?key=${RAWG_KEY}`, { cache: 'force-cache' })
                 ]);
 
-                const genresData = await genresRes.json();
-                const platformsData = await platformsRes.json();
+                genresData = await genresRes.json();
+                platformsData = await platformsRes.json();
 
-                genres = Array.isArray(genresData.results) ? genresData.results : [];
-                platforms = Array.isArray(platformsData.results) ? platformsData.results : [];
-
-                setLocalCache('rawg_genres_cache_upcoming', genres);
-                setLocalCache('rawg_platforms_cache_upcoming', platforms);
+                if (Array.isArray(genresData.results)) {
+                    setLocalCache('rawg_genres_cache', genresData.results);
+                }
+                if (Array.isArray(platformsData.results)) {
+                    setLocalCache('rawg_platforms_cache', platformsData.results);
+                }
             }
 
-            genres.forEach(genre => {
-                const option = document.createElement('option');
-                option.value = genre.id;
-                option.textContent = genre.name;
-                genreSelect.appendChild(option);
-            });
+            if (genresData.results) {
+                genresData.results.forEach(genre => {
+                    const option = document.createElement('option');
+                    option.value = genre.id;
+                    option.textContent = genre.name;
+                    genreSelect.appendChild(option);
+                });
+            }
 
-            platforms.forEach(platform => {
-                const option = document.createElement('option');
-                option.value = platform.id;
-                option.textContent = platform.name;
-                platformSelect.appendChild(option);
-            });
+            if (platformsData.results) {
+                platformsData.results.forEach(platform => {
+                    const option = document.createElement('option');
+                    option.value = platform.id;
+                    option.textContent = platform.name;
+                    platformSelect.appendChild(option);
+                });
+            }
 
             filtersLoaded = true;
         } catch (error) {
@@ -508,38 +548,42 @@ include 'includes/header.php';
 
     function getOrdering() {
         const sortMap = {
-            released: 'released',
             trending: '-added',
             popular: '-suggestions_count',
             rating: '-rating',
+            newest: '-released',
             name: 'name'
         };
-
-        return sortMap[sortSelect.value] || 'released';
+        return sortMap[sortSelect.value] || '-added';
     }
 
     function buildApiUrl(page) {
-        const hasPeriodFilter = periodSelect.value !== '';
-        const periodMonths = hasPeriodFilter ? parseInt(periodSelect.value, 10) : null;
-        const startDate = new Date();
-        const endDate = hasPeriodFilter
-            ? new Date(startDate.getFullYear(), startDate.getMonth() + periodMonths, startDate.getDate())
-            : new Date(startDate.getFullYear() + 15, startDate.getMonth(), startDate.getDate());
-
         const params = new URLSearchParams({
             key: RAWG_KEY,
             page_size: String(PAGE_SIZE),
             page: String(page),
-            ordering: getOrdering(),
-            dates: `${formatDateLocal(startDate)},${formatDateLocal(endDate)}`
+            ordering: getOrdering()
         });
+
+        const searchText = searchInput.value.trim();
+        if (searchText) {
+            params.append('search', searchText);
+        }
+
+        if (genreSelect.value) {
+            params.append('genres', genreSelect.value);
+        }
 
         if (platformSelect.value) {
             params.append('parent_platforms', platformSelect.value);
         }
 
-        if (genreSelect.value) {
-            params.append('genres', genreSelect.value);
+        if (yearSelect.value) {
+            params.append('dates', `${yearSelect.value}-01-01,${yearSelect.value}-12-31`);
+        }
+
+        if (minScoreSelect.value) {
+            params.append('metacritic', `${minScoreSelect.value},100`);
         }
 
         return `https://api.rawg.io/api/games?${params.toString()}`;
@@ -553,7 +597,6 @@ include 'includes/header.php';
             const card = document.createElement('a');
             card.className = 'game-card';
             card.href = `game.php?id=${game.id}`;
-
             const coverUrl = game.background_image || placeholderImage;
             const shouldPrioritize = currentPage === 1 && index < 12;
 
@@ -632,7 +675,9 @@ include 'includes/header.php';
 
         if (start > 1) {
             paginationEl.appendChild(createPageButton('1', 1, { active: currentPage === 1 }));
-            if (start > 2) paginationEl.appendChild(createDots());
+            if (start > 2) {
+                paginationEl.appendChild(createDots());
+            }
         }
 
         for (let page = start; page <= end; page++) {
@@ -640,31 +685,22 @@ include 'includes/header.php';
         }
 
         if (end < totalPages) {
-            if (end < totalPages - 1) paginationEl.appendChild(createDots());
+            if (end < totalPages - 1) {
+                paginationEl.appendChild(createDots());
+            }
             paginationEl.appendChild(createPageButton(String(totalPages), totalPages, { active: currentPage === totalPages }));
         }
 
         paginationEl.appendChild(createPageButton('›', currentPage + 1, { disabled: currentPage === totalPages }));
     }
 
-    async function prefetchPage(page) {
-        if (page < 1 || page > totalPages) return;
-
-        const requestUrl = buildApiUrl(page);
-        if (getCachedData(requestUrl, GAMES_CACHE_TTL)) return;
-
-        try {
-            const response = await fetch(requestUrl, { cache: 'force-cache' });
-            const data = await response.json();
-            setCachedData(requestUrl, data);
-        } catch (_) {}
-    }
-
     async function fetchGames(page = 1) {
-        if (loading) return;
+        if (loading) {
+            return;
+        }
 
         loading = true;
-        statusEl.textContent = 'A carregar lançamentos...';
+        statusEl.textContent = 'A carregar jogos...';
         currentPage = page;
         gamesGrid.innerHTML = '';
 
@@ -676,15 +712,14 @@ include 'includes/header.php';
             totalPages = Math.max(1, Math.ceil(totalGames / PAGE_SIZE));
             gamesCountEl.textContent = `${totalGames.toLocaleString('pt-PT')} Games`;
 
-            const items = Array.isArray(cached.results) ? cached.results : [];
-            if (items.length === 0) {
-                statusEl.textContent = 'Nenhum lançamento encontrado com os filtros atuais.';
+            const cachedItems = Array.isArray(cached.results) ? cached.results : [];
+            if (cachedItems.length === 0) {
+                statusEl.textContent = 'Nenhum jogo encontrado com os filtros atuais.';
                 paginationWrapEl.style.display = 'none';
             } else {
-                renderCards(items);
+                renderCards(cachedItems);
                 statusEl.textContent = '';
                 renderPagination();
-                prefetchPage(currentPage + 1);
             }
 
             loading = false;
@@ -702,8 +737,8 @@ include 'includes/header.php';
                 signal: activeRequestController.signal,
                 cache: 'force-cache'
             });
-
             const data = await response.json();
+
             setCachedData(requestUrl, data);
 
             totalGames = Number(data.count || 0);
@@ -712,13 +747,12 @@ include 'includes/header.php';
 
             const items = Array.isArray(data.results) ? data.results : [];
             if (items.length === 0) {
-                statusEl.textContent = 'Nenhum lançamento encontrado com os filtros atuais.';
+                statusEl.textContent = 'Nenhum jogo encontrado com os filtros atuais.';
                 paginationWrapEl.style.display = 'none';
             } else {
                 renderCards(items);
                 statusEl.textContent = '';
                 renderPagination();
-                prefetchPage(currentPage + 1);
             }
         } catch (error) {
             if (error.name === 'AbortError') {
@@ -736,10 +770,12 @@ include 'includes/header.php';
     }
 
     function resetFilters() {
-        periodSelect.value = '';
-        platformSelect.value = '';
+        searchInput.value = '';
         genreSelect.value = '';
-        sortSelect.value = 'released';
+        platformSelect.value = '';
+        yearSelect.value = '';
+        minScoreSelect.value = '';
+        sortSelect.value = 'trending';
         fetchGames(1);
     }
 
@@ -747,8 +783,15 @@ include 'includes/header.php';
     applyBtn.addEventListener('click', applyFilters);
     resetBtn.addEventListener('click', resetFilters);
     sortSelect.addEventListener('change', applyFilters);
-    periodSelect.addEventListener('change', applyFilters);
 
+    searchInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            applyFilters();
+        }
+    });
+
+    fillYears();
     fetchGames(1);
 </script>
 

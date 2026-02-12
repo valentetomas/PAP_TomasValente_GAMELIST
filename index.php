@@ -406,7 +406,6 @@ $stmt->close();
 <section class="trending-section">
     <div class="trending-header">
         <h2 class="trending-title">Avaliações populares</h2>
-        <a href="games.php" class="trending-more">Veja mais</a>
     </div>
     <div class="reviews-grid" id="popular-reviews-grid">
         <p style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px 20px;">A carregar avaliações...</p>
@@ -419,10 +418,180 @@ $stmt->close();
         <h2 class="trending-title">Próximos lançamentos</h2>
         <a href="upcoming.php" class="trending-more">Veja mais</a>
     </div>
-    <div class="trending-grid" id="upcoming-grid"></div>
+    <div class="release-calendar-box">
+        <button class="release-calendar-arrow prev" id="index-release-prev" type="button" aria-label="Anterior">‹</button>
+        <button class="release-calendar-arrow next" id="index-release-next" type="button" aria-label="Seguinte">›</button>
+        <div class="release-calendar-track" id="upcoming-grid"></div>
+    </div>
 </section>
 
 <style>
+.release-calendar-box {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 14px 42px;
+}
+
+.release-calendar-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(18, 21, 28, 0.88);
+    color: #fff;
+    border-radius: 999px;
+    padding: 0;
+    font-size: 0.95rem;
+    line-height: 1;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 4;
+    transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.release-calendar-box:hover .release-calendar-arrow,
+.release-calendar-box:focus-within .release-calendar-arrow {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.release-calendar-arrow:hover {
+    background: rgba(30, 34, 45, 0.95);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.release-calendar-arrow.prev {
+    left: 8px;
+}
+
+.release-calendar-arrow.next {
+    right: 8px;
+}
+
+.release-calendar-track {
+    display: grid;
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+    gap: 10px;
+    align-items: end;
+    min-height: 210px;
+}
+
+.release-calendar-item {
+    border: 0;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.18s ease;
+}
+
+.release-calendar-item:hover {
+    transform: translateY(-2px);
+}
+
+.release-calendar-cover {
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    position: relative;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+    background: #1a1d24;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.release-calendar-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: filter 0.25s ease;
+}
+
+.release-calendar-name {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    text-align: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    line-height: 1.2;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.9);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+}
+
+.release-calendar-item:hover .release-calendar-cover img,
+.release-calendar-item:focus-visible .release-calendar-cover img {
+    filter: brightness(0.28);
+}
+
+.release-calendar-item:hover .release-calendar-name,
+.release-calendar-item:focus-visible .release-calendar-name {
+    opacity: 1;
+}
+
+.release-calendar-date {
+    text-align: center;
+    margin-top: 6px;
+    font-size: 0.72rem;
+    color: #9ca3af;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+}
+
+.release-calendar-item.active {
+    transform: scale(1.06);
+    z-index: 3;
+}
+
+.release-calendar-item.active .release-calendar-cover {
+    border-color: var(--accent);
+    box-shadow: 0 6px 16px rgba(255, 51, 102, 0.18);
+}
+
+.release-calendar-item.active .release-calendar-date {
+    font-size: 0.95rem;
+    color: #d1d5db;
+}
+
+@media (max-width: 900px) {
+    .release-calendar-box {
+        padding: 12px 34px;
+    }
+
+    .release-calendar-arrow {
+        width: 26px;
+        height: 26px;
+        font-size: 0.85rem;
+    }
+
+    .release-calendar-arrow.prev {
+        left: 6px;
+    }
+
+    .release-calendar-arrow.next {
+        right: 6px;
+    }
+
+    .release-calendar-track {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+}
+
 /* --- FEATURES SECTION (Utilizadores não logados - Estilo BackloggD) --- */
 .features-section {
     max-width: 1200px;
@@ -1982,40 +2151,91 @@ async function toggleComments(reviewId, gameId, card) {
 // --- E. CARREGAR PRÓXIMOS LANÇAMENTOS ---
 async function loadUpcoming() {
     const container = document.getElementById('upcoming-grid');
-    const today = new Date();
-    const nextYear = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
-    
-    const todayStr = today.toISOString().split('T')[0];
-    const nextYearStr = nextYear.toISOString().split('T')[0];
-    
-    try {
-        const res = await fetch(`https://api.rawg.io/api/games?key=${apiKey}&dates=${todayStr},${nextYearStr}&ordering=released&page_size=6`);
-        const data = await res.json();
-        
+    const prevBtn = document.getElementById('index-release-prev');
+    const nextBtn = document.getElementById('index-release-next');
+    const placeholderImage = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22450%22%3E%3Crect fill=%22%23222%22 width=%22300%22 height=%22450%22/%3E%3C/svg%3E';
+    let releaseItems = [];
+    let activeIndex = 0;
+
+    function formatDateLabel(dateString) {
+        const date = new Date(dateString);
+        const day = date.toLocaleDateString('pt-PT', { day: '2-digit' });
+        const month = date.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+        return `${day} | ${month}`;
+    }
+
+    function renderReleaseCalendar() {
+        if (!releaseItems.length) {
+            container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 20px;">Sem lançamentos para mostrar.</div>';
+            return;
+        }
+
+        const windowSize = 9;
+        const half = Math.floor(windowSize / 2);
+        let start = Math.max(0, activeIndex - half);
+        let end = Math.min(releaseItems.length - 1, start + windowSize - 1);
+        start = Math.max(0, end - windowSize + 1);
+
         container.innerHTML = '';
 
-        data.results.forEach(game => {
-            if (game.background_image) {
-                const link = document.createElement('a');
-                link.href = `game.php?id=${game.id}`;
-                link.className = 'trending-card';
+        for (let index = start; index <= end; index++) {
+            const game = releaseItems[index];
+            const card = document.createElement('button');
+            card.type = 'button';
+            card.className = `release-calendar-item${index === activeIndex ? ' active' : ''}`;
+            card.innerHTML = `
+                <div class="release-calendar-cover">
+                    <img src="${game.background_image || placeholderImage}" alt="${game.name}" loading="lazy" decoding="async">
+                    <div class="release-calendar-name">${game.name}</div>
+                </div>
+                <div class="release-calendar-date">${formatDateLabel(game.released)}</div>
+            `;
 
-                const img = document.createElement('img');
-                img.src = game.background_image.replace('/media/games/', '/media/crop/600/400/games/');
-                img.alt = game.name;
-                img.loading = "lazy";
+            card.addEventListener('click', () => {
+                activeIndex = index;
+                renderReleaseCalendar();
+            });
 
-                const titleDiv = document.createElement('div');
-                titleDiv.className = 'trending-card-title';
-                titleDiv.innerText = game.name;
+            const image = card.querySelector('img');
+            image.addEventListener('error', () => {
+                image.src = placeholderImage;
+            }, { once: true });
 
-                link.appendChild(img);
-                link.appendChild(titleDiv);
-                container.appendChild(link);
-            }
-        });
+            container.appendChild(card);
+        }
+    }
+
+    if (prevBtn && nextBtn) {
+        prevBtn.onclick = () => {
+            if (!releaseItems.length) return;
+            activeIndex = Math.max(0, activeIndex - 1);
+            renderReleaseCalendar();
+        };
+
+        nextBtn.onclick = () => {
+            if (!releaseItems.length) return;
+            activeIndex = Math.min(releaseItems.length - 1, activeIndex + 1);
+            renderReleaseCalendar();
+        };
+    }
+
+    const today = new Date();
+    const plusSixMonths = new Date(today.getFullYear(), today.getMonth() + 6, today.getDate());
+    const todayStr = today.toISOString().split('T')[0];
+    const endStr = plusSixMonths.toISOString().split('T')[0];
+
+    try {
+        const res = await fetch(`https://api.rawg.io/api/games?key=${apiKey}&dates=${todayStr},${endStr}&ordering=released&page_size=30`, { cache: 'force-cache' });
+        const data = await res.json();
+        releaseItems = Array.isArray(data.results)
+            ? data.results.filter(game => game.released)
+            : [];
+
+        activeIndex = 0;
+        renderReleaseCalendar();
     } catch (e) {
         console.error('Erro upcoming:', e);
+        container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 20px;">Erro ao carregar calendário.</div>';
     }
 }
 
