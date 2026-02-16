@@ -101,6 +101,15 @@ $body_class = $body_class ?? 'gamelist-body';
     const results = document.getElementById('headerResults');
     let timeout;
 
+    const escapeHtml = (value) => {
+        return String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+    };
+
     if(input && results){
         input.addEventListener('input', () => {
             clearTimeout(timeout);
@@ -109,27 +118,51 @@ $body_class = $body_class ?? 'gamelist-body';
 
             timeout = setTimeout(async () => {
                 try {
-                    const res = await fetch(`https://api.rawg.io/api/games?key=${RAWG_KEY}&search=${q}&page_size=4`);
-                    const data = await res.json();
+                    const [gamesRes, usersRes] = await Promise.all([
+                        fetch(`https://api.rawg.io/api/games?key=${RAWG_KEY}&search=${encodeURIComponent(q)}&page_size=4`),
+                        fetch(`search_users.php?q=${encodeURIComponent(q)}`)
+                    ]);
+
+                    const gamesData = await gamesRes.json();
+                    const usersData = await usersRes.json();
+                    const users = (usersData && usersData.success && Array.isArray(usersData.users)) ? usersData.users : [];
                     
                     results.innerHTML = '';
-                    if(data.results && data.results.length){
-                        data.results.forEach(g => {
-                            const year = g.released ? g.released.split('-')[0] : '';
+                    let hasAnyResult = false;
+
+                    if(users.length){
+                        hasAnyResult = true;
+                        users.forEach(u => {
+                            const avatar = u.avatar || 'https://via.placeholder.com/40';
                             const html = `
-                                <div class="bkd-result-item" onclick="window.location.href='game.php?id=${g.id}'">
-                                    <img src="${g.background_image || ''}" class="bkd-result-img">
+                                <div class="bkd-result-item" onclick="window.location.href='user_profile.php?id=${u.id}'">
+                                    <img src="${escapeHtml(avatar)}" class="bkd-result-img bkd-result-avatar">
                                     <div class="bkd-result-info">
-                                        <div class="name">${g.name}</div>
-                                        <div class="meta">${year}</div>
+                                        <div class="name">${escapeHtml(u.username)}</div>
+                                        <div class="meta">Utilizador · ${u.follower_count || 0} seguidores</div>
                                     </div>
                                 </div>`;
                             results.innerHTML += html;
                         });
-                        results.style.display = 'block';
-                    } else {
-                        results.style.display = 'none';
                     }
+
+                    if(gamesData.results && gamesData.results.length){
+                        hasAnyResult = true;
+                        gamesData.results.forEach(g => {
+                            const year = g.released ? g.released.split('-')[0] : '';
+                            const html = `
+                                <div class="bkd-result-item" onclick="window.location.href='game.php?id=${g.id}'">
+                                    <img src="${escapeHtml(g.background_image || '')}" class="bkd-result-img">
+                                    <div class="bkd-result-info">
+                                        <div class="name">${escapeHtml(g.name)}</div>
+                                        <div class="meta">Jogo${year ? ' · ' + escapeHtml(year) : ''}</div>
+                                    </div>
+                                </div>`;
+                            results.innerHTML += html;
+                        });
+                    }
+
+                    results.style.display = hasAnyResult ? 'block' : 'none';
                 } catch(e) {}
             }, 300);
         });

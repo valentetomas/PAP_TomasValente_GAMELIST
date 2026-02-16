@@ -179,8 +179,8 @@ while($row = $dist_res->fetch_assoc()) {
 
 <style>
     :root {
-        --primary-color: #00b4ff;
-        --secondary-color: #8a2be2;
+        --primary-color: #ff3366;
+        --secondary-color: #ff3366;
         --bg-dark: #050507;
         --surface-glass: rgba(20, 20, 23, 0.85);
         --border-light: rgba(255, 255, 255, 0.08);
@@ -267,8 +267,8 @@ while($row = $dist_res->fetch_assoc()) {
     .act-btn.is-in.btn-later:hover { background: linear-gradient(135deg, #00d4ff 0%, #00a8dd 100%); }
     .act-btn.is-in.btn-played { background: linear-gradient(135deg, #1db954 0%, #0f7a36 100%); color: #fff; }
     .act-btn.is-in.btn-played:hover { background: linear-gradient(135deg, #1ed760 0%, #1aa34a 100%); }
-    .act-btn.is-in.btn-fav { background: linear-gradient(135deg, #8a2be2 0%, #5d1ba9 100%); color: #fff; }
-    .act-btn.is-in.btn-fav:hover { background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); }
+    .act-btn.is-in.btn-fav { background: linear-gradient(135deg, #ff3366 0%, #cc2952 100%); color: #fff; }
+    .act-btn.is-in.btn-fav:hover { background: linear-gradient(135deg, #ff4d7a 0%, #e62e5c 100%); }
 
     /* Chart */
     .rating-box { background: var(--surface-glass); border-radius: 12px; padding: 20px; margin-top: 20px; text-align: center; border: 1px solid var(--border-light); }
@@ -276,7 +276,7 @@ while($row = $dist_res->fetch_assoc()) {
     .chart-container { display: flex; align-items: flex-end; justify-content: space-between; height: 60px; gap: 4px; padding-top: 10px; border-bottom: 1px solid #333; }
     .chart-bar-wrapper { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; }
     .chart-bar { width: 100%; background: #333; border-radius: 2px 2px 0 0; min-height: 2px; }
-    .chart-bar.filled { background: linear-gradient(to top, var(--secondary-color), #a855f7); }
+    .chart-bar.filled { background: linear-gradient(to top, var(--secondary-color), #ff6b93); }
 
     /* REVIEWS INTERATIVIDADE */
     .review-card {
@@ -311,16 +311,16 @@ while($row = $dist_res->fetch_assoc()) {
     .comment-date { font-size: 0.75rem; color: #666; margin-top: 4px; }
     .comment-form { display: flex; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-light); }
     .comment-form textarea {
-        flex: 1; background: rgba(0, 180, 255, 0.05); border: 1px solid var(--border-light);
+        flex: 1; background: rgba(255, 51, 102, 0.05); border: 1px solid var(--border-light);
         color: #fff; border-radius: 6px; padding: 8px 12px; font-size: 0.85rem;
         resize: none; font-family: inherit; min-height: 40px;
     }
-    .comment-form textarea:focus { outline: none; border-color: var(--primary-color); background: rgba(0, 180, 255, 0.1); }
+    .comment-form textarea:focus { outline: none; border-color: var(--primary-color); background: rgba(255, 51, 102, 0.1); }
     .comment-form button {
         background: var(--primary-color); color: #fff; border: none; border-radius: 6px;
         padding: 8px 16px; font-weight: 600; cursor: pointer; font-size: 0.85rem; white-space: nowrap; transition: background 0.2s;
     }
-    .comment-form button:hover { background: #00d4ff; }
+    .comment-form button:hover { background: #ff4d7a; }
     .expand-comments-btn { color: #888; background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; transition: color 0.2s; }
     .expand-comments-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
 
@@ -383,14 +383,14 @@ while($row = $dist_res->fetch_assoc()) {
     .stars-wrapper i.active, .stars-wrapper i.hovered { color: var(--primary-color); }
     .rating-result { font-weight: bold; margin-left: 10px; font-size: 1.2rem; }
     .review-text {
-        flex: 1; background: rgba(0, 180, 255, 0.05); border: 1px solid var(--border-light); border-radius: 8px;
+        flex: 1; background: rgba(255, 51, 102, 0.05); border: 1px solid var(--border-light); border-radius: 8px;
         padding: 15px; color: #ddd; resize: none; outline: none; margin-bottom: 20px; font-family: inherit;
     }
-    .review-text:focus { border-color: var(--primary-color); background: rgba(0, 180, 255, 0.1); }
+    .review-text:focus { border-color: var(--primary-color); background: rgba(255, 51, 102, 0.1); }
     .modal-actions { display: flex; justify-content: flex-end; gap: 15px; }
     .btn-cancel { background: none; border: none; color: #888; cursor: pointer; }
     .btn-publish { background: var(--primary-color); color: white; border: none; padding: 10px 25px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: background 0.2s; }
-    .btn-publish:hover { background: #00d4ff; }
+    .btn-publish:hover { background: #ff4d7a; }
     @media (max-width: 768px) {
         .modal-box { flex-direction: column; height: auto; max-height: 90vh; overflow-y: auto; }
         .modal-poster-area { width: 100%; height: 150px; }

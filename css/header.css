@@ -126,6 +126,7 @@ body {
 }
 .bkd-result-item:hover { background: rgba(255,255,255,0.1); }
 .bkd-result-img { width: 32px; height: 45px; object-fit: cover; border-radius: 3px; }
+.bkd-result-img.bkd-result-avatar { width: 34px; height: 34px; border-radius: 50%; }
 .bkd-result-info .name { font-size: 0.85rem; font-weight: 700; color: #fff; }
 .bkd-result-info .meta { font-size: 0.75rem; color: #888; }
 

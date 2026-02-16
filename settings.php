@@ -133,244 +133,273 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_account'])) {
     }
 }
 
-include 'includes/header.php';
-
 // Re-carregar $user antes de usar no HTML (para garantir que tem todos os dados)
 $user = $conn->query("SELECT * FROM users WHERE id = $user_id")->fetch_assoc();
+
+$page_title = 'Definições - GameList';
+include 'includes/header.php';
+
+// O header usa a variável $user internamente (com dados reduzidos),
+// por isso voltamos a carregar o utilizador completo para esta página.
+$user = $conn->query("SELECT * FROM users WHERE id = $user_id")->fetch_assoc();
 ?>
-<title>Definições - GameList</title>
-</head>
-<body>
 <style>
+    :root {
+        --bg-dark: #0b0c0f;
+        --surface: #16171c;
+        --surface-alt: #1d2028;
+        --border: rgba(255, 255, 255, 0.08);
+        --text-main: #ffffff;
+        --text-muted: #9ca3af;
+        --accent: #ff3366;
+        --accent-hover: #ff4d7a;
+        --radius: 14px;
+    }
+
     body {
-            background: linear-gradient(180deg, #0b0b0b, #151515);
-            color: #eee;
-            font-family: 'Segoe UI', Tahoma, sans-serif;
-            margin: 0;
-            padding-top: 100px;
-        }
+        background: linear-gradient(180deg, var(--bg-dark) 0%, #101218 100%);
+        color: var(--text-main);
+        font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
+        padding-top: 84px;
+    }
 
-        .settings-container {
-            max-width: 900px;
-            margin: 0 auto 60px auto;
-            padding: 0 20px;
-            padding-top: 30px;
-        }
+    .settings-container {
+        max-width: 980px;
+        margin: 0 auto 60px;
+        padding: 20px;
+    }
 
-        .settings-header {
-            margin-bottom: 40px;
-        }
+    .settings-header {
+        margin-bottom: 18px;
+        background: linear-gradient(135deg, #171922 0%, #11131a 100%);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px;
+    }
 
-        .settings-header h1 {
-            color: #00bfff;
-            font-size: 2.5rem;
-            margin: 0 0 10px 0;
-        }
+    .settings-header h1 {
+        color: #fff;
+        font-size: clamp(1.5rem, 2.2vw, 2.2rem);
+        margin: 0 0 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
 
-        .settings-header p {
-            color: #aaa;
-            margin: 0;
-        }
+    .settings-header p {
+        color: var(--text-muted);
+        margin: 0;
+    }
 
-        .settings-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-            border-bottom: 1px solid #333;
-            padding-bottom: 15px;
-        }
+    .feedback {
+        padding: 12px 14px;
+        border-radius: 10px;
+        margin-bottom: 14px;
+        font-weight: 600;
+        border: 1px solid transparent;
+    }
 
-        .tab-btn {
-            background: transparent;
-            border: none;
-            color: #aaa;
-            padding: 10px 16px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.2s;
-            border-bottom: 2px solid transparent;
-        }
+    .feedback.success {
+        background: rgba(34, 197, 94, 0.12);
+        color: #86efac;
+        border-color: rgba(34, 197, 94, 0.38);
+    }
 
-        .tab-btn:hover {
-            color: #00bfff;
-        }
+    .feedback.error {
+        background: rgba(239, 68, 68, 0.12);
+        color: #fca5a5;
+        border-color: rgba(239, 68, 68, 0.38);
+    }
 
-        .tab-btn.active {
-            color: #00bfff;
-            border-bottom-color: #00bfff;
-        }
+    .settings-tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+    }
 
-        .tab-content {
-            display: none;
-        }
+    .tab-btn {
+        border: 1px solid var(--border);
+        background: rgba(255,255,255,0.02);
+        color: #c9ced6;
+        border-radius: 999px;
+        padding: 9px 14px;
+        cursor: pointer;
+        font-size: .86rem;
+        font-weight: 700;
+        transition: .2s ease;
+    }
 
-        .tab-content.active {
-            display: block;
-        }
+    .tab-btn:hover {
+        border-color: rgba(255, 51, 102, 0.45);
+        color: #fff;
+        background: rgba(255, 51, 102, 0.1);
+    }
 
-        .settings-section {
-            background: rgba(30, 30, 35, 0.5);
-            border: 1px solid #333;
-            border-radius: 10px;
-            padding: 25px;
-            margin-bottom: 20px;
-        }
+    .tab-btn.active {
+        color: #fff;
+        border-color: rgba(255, 51, 102, 0.6);
+        background: rgba(255, 51, 102, 0.18);
+    }
 
-        .settings-section h2 {
-            color: #00bfff;
-            margin-top: 0;
-            margin-bottom: 20px;
-            font-size: 1.4rem;
-        }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
+    .settings-section {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px;
+        margin-bottom: 14px;
+    }
 
-        .form-group label {
-            display: block;
-            color: #ccc;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
+    .settings-section h2 {
+        color: #fff;
+        margin-top: 0;
+        margin-bottom: 18px;
+        font-size: 1.16rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
 
-        .form-group input[type="text"],
-        .form-group input[type="email"],
-        .form-group input[type="password"],
-        .form-group textarea,
-        .form-group select {
-            width: 100%;
-            padding: 12px;
-            background: #222;
-            border: 1px solid #444;
-            border-radius: 6px;
-            color: #eee;
-            font-size: 1rem;
-            box-sizing: border-box;
-            transition: border 0.2s;
-        }
+    .settings-section h2 i {
+        color: var(--accent);
+    }
 
-        .form-group input:focus,
-        .form-group textarea:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #00bfff;
-            box-shadow: 0 0 10px rgba(0, 191, 255, 0.2);
-        }
+    .form-group { margin-bottom: 16px; }
 
-        .form-group textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
+    .form-group label {
+        display: block;
+        color: #d2d6de;
+        margin-bottom: 7px;
+        font-weight: 600;
+        font-size: .93rem;
+    }
 
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+    .form-group input[type="text"],
+    .form-group input[type="email"],
+    .form-group input[type="password"],
+    .form-group textarea,
+    .form-group select {
+        width: 100%;
+        padding: 11px 12px;
+        background: #10131a;
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 10px;
+        color: #eef1f6;
+        font-size: 0.95rem;
+        transition: .2s ease;
+    }
 
-        .checkbox-group input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-        }
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: rgba(255, 51, 102, 0.6);
+        box-shadow: 0 0 0 3px rgba(255, 51, 102, 0.15);
+    }
 
-        .checkbox-group label {
-            margin: 0;
-            cursor: pointer;
-            color: #ccc;
-        }
+    .form-group textarea {
+        resize: vertical;
+        min-height: 112px;
+    }
 
-        .btn {
-            padding: 12px 24px;
-            background: linear-gradient(90deg, #00bfff 0%, #0080ff 100%);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 1rem;
-            transition: opacity 0.2s;
-        }
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
 
-        .btn:hover {
-            opacity: 0.9;
-        }
+    .social-inputs {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
 
-        .btn-danger {
-            background: linear-gradient(90deg, #ff4444 0%, #cc0000 100%);
-        }
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
 
-        .btn-secondary {
-            background: #444;
-            color: #eee;
-        }
+    .checkbox-group input[type="checkbox"] {
+        width: 17px;
+        height: 17px;
+        accent-color: var(--accent);
+        cursor: pointer;
+    }
 
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
+    .checkbox-group label {
+        margin: 0;
+        color: #e3e7ef;
+        cursor: pointer;
+        font-weight: 600;
+    }
 
-        .feedback {
-            padding: 15px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            font-weight: 500;
-        }
+    .helper-text {
+        color: var(--text-muted);
+        font-size: .84rem;
+        margin-top: 7px;
+        line-height: 1.45;
+    }
 
-        .feedback.success {
-            background: rgba(76, 175, 80, 0.2);
-            color: #4caf50;
-            border: 1px solid #4caf50;
-        }
+    .btn {
+        padding: 10px 16px;
+        background: linear-gradient(135deg, var(--accent) 0%, #cc2952 100%);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: .92rem;
+        transition: .2s ease;
+    }
 
-        .feedback.error {
-            background: rgba(244, 67, 54, 0.2);
-            color: #ff6b6b;
-            border: 1px solid #f44336;
-        }
+    .btn:hover {
+        background: linear-gradient(135deg, var(--accent-hover) 0%, #e62e5c 100%);
+        transform: translateY(-1px);
+    }
 
-        .current-value {
-            color: #00bfff;
-            font-weight: bold;
-            margin-top: 5px;
-            font-size: 0.9rem;
-        }
+    .btn-danger {
+        background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+    }
 
+    .btn-danger:hover {
+        background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+    }
+
+    .current-value {
+        color: #f3b5c7;
+        font-weight: 600;
+        margin-top: 6px;
+        font-size: 0.84rem;
+    }
+
+    .danger-zone {
+        border-color: rgba(239, 68, 68, 0.35);
+        background: linear-gradient(180deg, rgba(239, 68, 68, 0.08) 0%, rgba(239, 68, 68, 0.03) 100%);
+    }
+
+    @media (max-width: 860px) {
+        .form-row,
         .social-inputs {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
+            grid-template-columns: 1fr;
         }
+    }
 
-        @media (max-width: 768px) {
-            .settings-container {
-                padding: 0 15px;
-            }
+    @media (max-width: 640px) {
+        .settings-container { padding: 14px; }
+        .settings-tabs { flex-direction: column; }
+        .tab-btn { width: 100%; text-align: left; border-radius: 10px; }
+    }
+</style>
 
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-
-            .settings-tabs {
-                flex-direction: column;
-            }
-
-            .tab-btn {
-                width: 100%;
-                text-align: left;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="settings-container">
-        <div class="settings-header">
-            <h1>⚙️ Definições</h1>
-            <p>Gere a tua conta, privacidade e preferências</p>
-        </div>
+<div class="settings-container">
+    <div class="settings-header">
+        <h1><i class="fa-solid fa-gear" aria-hidden="true"></i>Definições</h1>
+        <p>Gere a tua conta, privacidade e preferências</p>
+    </div>
 
         <?php if ($feedback): ?>
             <div class="feedback success"><?php echo $feedback; ?></div>
@@ -380,19 +409,18 @@ $user = $conn->query("SELECT * FROM users WHERE id = $user_id")->fetch_assoc();
             <div class="feedback error"><?php echo $error; ?></div>
         <?php endif; ?>
 
-        <div class="settings-tabs">
-            <button class="tab-btn active" onclick="switchTab('account')">Conta & Segurança</button>
-            <button class="tab-btn" onclick="switchTab('profile')">Perfil</button>
-            <button class="tab-btn" onclick="switchTab('privacy')">Privacidade</button>
-            <button class="tab-btn" onclick="switchTab('preferences')">Preferências</button>
-            <button class="tab-btn" onclick="switchTab('danger')">Zona de Perigo</button>
-        </div>
+    <div class="settings-tabs">
+        <button class="tab-btn active" type="button" data-tab="account">Conta & Segurança</button>
+        <button class="tab-btn" type="button" data-tab="profile">Perfil</button>
+        <button class="tab-btn" type="button" data-tab="privacy">Privacidade</button>
+        <button class="tab-btn" type="button" data-tab="preferences">Preferências</button>
+        <button class="tab-btn" type="button" data-tab="danger">Zona de Perigo</button>
+    </div>
 
-        <!-- TAB: CONTA & SEGURANÇA -->
-        <div id="account" class="tab-content active">
-            <!-- Mudar Password -->
-            <div class="settings-section">
-                <h2>🔐 Alterar Password</h2>
+    <!-- TAB: CONTA & SEGURANÇA -->
+    <div id="account" class="tab-content active">
+        <div class="settings-section">
+            <h2><i class="fa-solid fa-lock"></i>Alterar Password</h2>
                 <form method="POST">
                     <div class="form-group">
                         <label>Password Atual</label>
@@ -408,46 +436,43 @@ $user = $conn->query("SELECT * FROM users WHERE id = $user_id")->fetch_assoc();
                             <input type="password" name="confirm_password" required>
                         </div>
                     </div>
-                    <button type="submit" name="change_password" class="btn">Alterar Password</button>
+                <button type="submit" name="change_password" class="btn">Alterar Password</button>
                 </form>
-            </div>
+        </div>
 
-            <!-- Mudar Email -->
-            <div class="settings-section">
-                <h2>📧 Alterar Email</h2>
+        <div class="settings-section">
+            <h2><i class="fa-solid fa-envelope"></i>Alterar Email</h2>
                 <form method="POST">
                     <div class="form-group">
                         <label>Email Atual</label>
-                        <input type="email" value="<?php echo htmlspecialchars($user['email']); ?>" disabled>
+                        <input type="email" value="<?php echo htmlspecialchars($user['email'] ?? ''); ?>" disabled>
                         <div class="current-value">✓ Verificado</div>
                     </div>
                     <div class="form-group">
                         <label>Novo Email</label>
                         <input type="email" name="new_email" required>
                     </div>
-                    <button type="submit" name="change_email" class="btn">Alterar Email</button>
+                <button type="submit" name="change_email" class="btn">Alterar Email</button>
                 </form>
-            </div>
         </div>
+    </div>
 
         <!-- TAB: PERFIL -->
-        <div id="profile" class="tab-content">
-            <!-- Biografia -->
-            <div class="settings-section">
-                <h2>📝 Biografia</h2>
+    <div id="profile" class="tab-content">
+        <div class="settings-section">
+            <h2><i class="fa-regular fa-note-sticky"></i>Biografia</h2>
                 <form method="POST">
                     <div class="form-group">
                         <label>Sobre ti (até 500 caracteres)</label>
                         <textarea name="biography" placeholder="Conta um pouco sobre ti, os teus interesses em jogos, etc..."><?php echo htmlspecialchars($user['biography'] ?? ''); ?></textarea>
                         <div class="current-value" id="bioCount">0/500</div>
                     </div>
-                    <button type="submit" name="update_bio" class="btn">Guardar Biografia</button>
+                <button type="submit" name="update_bio" class="btn">Guardar Biografia</button>
                 </form>
-            </div>
+        </div>
 
-            <!-- Redes Sociais -->
-            <div class="settings-section">
-                <h2>🌐 Redes Sociais</h2>
+        <div class="settings-section">
+            <h2><i class="fa-solid fa-share-nodes"></i>Redes Sociais</h2>
                 <form method="POST">
                     <?php 
                     $socials = json_decode($user['social_links'] ?? '{}', true) ?? [];
@@ -466,22 +491,22 @@ $user = $conn->query("SELECT * FROM users WHERE id = $user_id")->fetch_assoc();
                             <input type="text" name="discord" placeholder="utilizador#0000" value="<?php echo htmlspecialchars($socials['discord'] ?? ''); ?>">
                         </div>
                     </div>
-                    <button type="submit" name="update_socials" class="btn" style="margin-top: 15px;">Guardar Redes Sociais</button>
+                <button type="submit" name="update_socials" class="btn" style="margin-top: 8px;">Guardar Redes Sociais</button>
                 </form>
-            </div>
         </div>
+    </div>
 
         <!-- TAB: PRIVACIDADE -->
-        <div id="privacy" class="tab-content">
-            <div class="settings-section">
-                <h2>🔒 Definições de Privacidade</h2>
+    <div id="privacy" class="tab-content">
+        <div class="settings-section">
+            <h2><i class="fa-solid fa-user-shield"></i>Definições de Privacidade</h2>
                 <form method="POST">
                     <div class="form-group">
                         <div class="checkbox-group">
                             <input type="checkbox" name="profile_public" id="profile_public" <?php echo ($user['profile_public'] ?? 1) ? 'checked' : ''; ?>>
                             <label for="profile_public">Perfil Público</label>
                         </div>
-                        <p style="color: #888; font-size: 0.9rem; margin-top: 8px;">Permite que outros utilizadores vejam o teu perfil</p>
+                    <p class="helper-text">Permite que outros utilizadores vejam o teu perfil</p>
                     </div>
 
                     <div class="form-group">
@@ -489,18 +514,18 @@ $user = $conn->query("SELECT * FROM users WHERE id = $user_id")->fetch_assoc();
                             <input type="checkbox" name="show_reviews" id="show_reviews" <?php echo ($user['show_reviews'] ?? 1) ? 'checked' : ''; ?>>
                             <label for="show_reviews">Mostrar Minhas Reviews</label>
                         </div>
-                        <p style="color: #888; font-size: 0.9rem; margin-top: 8px;">Permite que outros vejam as tuas avaliações de jogos</p>
+                    <p class="helper-text">Permite que outros vejam as tuas avaliações de jogos</p>
                     </div>
 
-                    <button type="submit" name="update_privacy" class="btn">Guardar Privacidade</button>
+                <button type="submit" name="update_privacy" class="btn">Guardar Privacidade</button>
                 </form>
-            </div>
         </div>
+    </div>
 
         <!-- TAB: PREFERÊNCIAS -->
-        <div id="preferences" class="tab-content">
-            <div class="settings-section">
-                <h2>🎨 Tema</h2>
+    <div id="preferences" class="tab-content">
+        <div class="settings-section">
+            <h2><i class="fa-solid fa-palette"></i>Tema</h2>
                 <form method="POST">
                     <div class="form-group">
                         <label>Escolhe o teu tema preferido</label>
@@ -509,56 +534,53 @@ $user = $conn->query("SELECT * FROM users WHERE id = $user_id")->fetch_assoc();
                             <option value="light" <?php echo ($user['theme'] ?? 'dark') === 'light' ? 'selected' : ''; ?>>Claro</option>
                         </select>
                     </div>
-                    <button type="submit" name="change_theme" class="btn">Guardar Tema</button>
+                <button type="submit" name="change_theme" class="btn">Guardar Tema</button>
                 </form>
-            </div>
         </div>
+    </div>
 
         <!-- TAB: ZONA DE PERIGO -->
-        <div id="danger" class="tab-content">
-            <div class="settings-section" style="border-color: #ff6b6b;">
-                <h2 style="color: #ff6b6b;">⚠️ Eliminar Conta</h2>
-                <p style="color: #ccc; line-height: 1.6;">
-                    ⚠️ <strong>Aviso:</strong> Eliminar a tua conta é uma ação permanente. Todos os teus dados, reviews e informações de perfil serão apagados e não poderão ser recuperados.
-                </p>
+    <div id="danger" class="tab-content">
+        <div class="settings-section danger-zone">
+            <h2><i class="fa-solid fa-triangle-exclamation"></i>Eliminar Conta</h2>
+            <p class="helper-text" style="color:#fecaca;">
+                <strong>Aviso:</strong> Eliminar a tua conta é uma ação permanente. Todos os teus dados, reviews e informações de perfil serão apagados e não poderão ser recuperados.
+            </p>
                 <form method="POST" onsubmit="return confirm('Tens a certeza que pretendes eliminar a tua conta permanentemente? Esta ação não pode ser desfeita!');">
                     <div class="form-group">
                         <label>Confirma a tua password para eliminar a conta</label>
                         <input type="password" name="delete_password" required placeholder="Escreve a tua password">
                     </div>
-                    <button type="submit" name="delete_account" class="btn btn-danger">Eliminar Permanentemente</button>
+                <button type="submit" name="delete_account" class="btn btn-danger">Eliminar Permanentemente</button>
                 </form>
-            </div>
         </div>
     </div>
+</div>
 
-    <script>
-        function switchTab(tabName) {
-            // Esconder todos os conteúdos
-            const contents = document.querySelectorAll('.tab-content');
-            contents.forEach(content => content.classList.remove('active'));
+<script>
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
 
-            // Desativar todos os botões
-            const buttons = document.querySelectorAll('.tab-btn');
-            buttons.forEach(btn => btn.classList.remove('active'));
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabName = btn.dataset.tab;
+            tabContents.forEach(content => content.classList.remove('active'));
+            tabButtons.forEach(button => button.classList.remove('active'));
+            const target = document.getElementById(tabName);
+            if (target) target.classList.add('active');
+            btn.classList.add('active');
+        });
+    });
 
-            // Mostrar conteúdo selecionado
-            document.getElementById(tabName).classList.add('active');
-
-            // Ativar botão selecionado
-            event.target.classList.add('active');
+    const bioTextarea = document.querySelector('textarea[name="biography"]');
+    if (bioTextarea) {
+        function updateBioCount() {
+            const count = bioTextarea.value.length;
+            document.getElementById('bioCount').textContent = count + '/500';
         }
+        bioTextarea.addEventListener('input', updateBioCount);
+        updateBioCount();
+    }
+</script>
 
-        // Contador de caracteres para biografia
-        const bioTextarea = document.querySelector('textarea[name="biography"]');
-        if (bioTextarea) {
-            function updateBioCount() {
-                const count = bioTextarea.value.length;
-                document.getElementById('bioCount').textContent = count + '/500';
-            }
-            bioTextarea.addEventListener('input', updateBioCount);
-            updateBioCount();
-        }
-    </script>
-
-    <?php include 'includes/footer.php'; ?>
+<?php include 'includes/footer.php'; ?>
