@@ -127,7 +127,7 @@ if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-$allowedTabs = ['account', 'profile', 'privacy', 'preferences', 'danger'];
+$allowedTabs = ['account', 'profile'];
 $active_tab = 'account';
 if (isset($_GET['tab']) && in_array($_GET['tab'], $allowedTabs, true)) {
     $active_tab = $_GET['tab'];
@@ -352,41 +352,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             }
 
             $stmt->close();
-        }
-
-        if (!$error && isset($_POST['update_privacy'])) {
-            $profile_public = isset($_POST['profile_public']) ? 1 : 0;
-            $show_reviews = isset($_POST['show_reviews']) ? 1 : 0;
-
-            $stmt = $conn->prepare("UPDATE users SET profile_public = ?, show_reviews = ? WHERE id = ?");
-            $stmt->bind_param("iii", $profile_public, $show_reviews, $user_id);
-
-            if ($stmt->execute()) {
-                $feedback = "Privacidade atualizada com sucesso!";
-            } else {
-                $error = "Não foi possível atualizar a privacidade.";
-            }
-
-            $stmt->close();
-        }
-
-        if (!$error && isset($_POST['change_theme'])) {
-            $theme = $_POST['theme'] ?? 'dark';
-
-            if (!in_array($theme, ['light', 'dark'], true)) {
-                $error = "Tema inválido.";
-            } else {
-                $stmt = $conn->prepare("UPDATE users SET theme = ? WHERE id = ?");
-                $stmt->bind_param("si", $theme, $user_id);
-
-                if ($stmt->execute()) {
-                    $feedback = "Tema alterado com sucesso!";
-                } else {
-                    $error = "Não foi possível alterar o tema.";
-                }
-
-                $stmt->close();
-            }
         }
 
         if (!$error && isset($_POST['delete_account'])) {
@@ -949,7 +914,7 @@ $user = fetchUserById($conn, (int)$user_id);
 <div class="settings-container">
     <div class="settings-header">
         <h1><i class="fa-solid fa-gear" aria-hidden="true"></i>Definições</h1>
-        <p>Gere a tua conta, privacidade e preferências</p>
+        <p>Gere a tua conta e perfil</p>
     </div>
 
         <?php if ($feedback): ?>
@@ -969,9 +934,6 @@ $user = fetchUserById($conn, (int)$user_id);
         <div class="settings-tabs">
             <button class="tab-btn <?php echo $active_tab === 'account' ? 'active' : ''; ?>" type="button" data-tab="account">Conta & Segurança</button>
             <button class="tab-btn <?php echo $active_tab === 'profile' ? 'active' : ''; ?>" type="button" data-tab="profile">Perfil</button>
-            <button class="tab-btn <?php echo $active_tab === 'privacy' ? 'active' : ''; ?>" type="button" data-tab="privacy">Privacidade</button>
-            <button class="tab-btn <?php echo $active_tab === 'preferences' ? 'active' : ''; ?>" type="button" data-tab="preferences">Preferências</button>
-            <button class="tab-btn <?php echo $active_tab === 'danger' ? 'active' : ''; ?>" type="button" data-tab="danger">Zona de Perigo</button>
         </div>
 
         <div class="settings-panels">
@@ -1041,6 +1003,22 @@ $user = fetchUserById($conn, (int)$user_id);
                         <input type="email" name="new_email" required>
                     </div>
                 <button type="submit" name="change_email" class="btn">Alterar Email</button>
+                </form>
+        </div>
+
+        <div class="settings-section danger-zone">
+            <h2><i class="fa-solid fa-triangle-exclamation"></i>Zona de Perigo</h2>
+            <p class="helper-text" style="color:#fecaca; margin-top: -8px;">
+                <strong>Eliminar Conta:</strong> Esta ação é permanente. Todos os teus dados, reviews e informações de perfil serão apagados e não poderão ser recuperados.
+            </p>
+                <form method="POST" onsubmit="return confirm('Tens a certeza que pretendes eliminar a tua conta permanentemente? Esta ação não pode ser desfeita!');">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+                    <input type="hidden" name="active_tab" value="account">
+                    <div class="form-group">
+                        <label>Confirma a tua password para eliminar a conta</label>
+                        <input type="password" name="delete_password" required placeholder="Escreve a tua password">
+                    </div>
+                <button type="submit" name="delete_account" class="btn btn-danger">Eliminar Permanentemente</button>
                 </form>
         </div>
     </div>
@@ -1142,71 +1120,6 @@ $user = fetchUserById($conn, (int)$user_id);
         </div>
     </div>
 
-        <!-- TAB: PRIVACIDADE -->
-    <div id="privacy" class="tab-content <?php echo $active_tab === 'privacy' ? 'active' : ''; ?>">
-        <div class="settings-section">
-            <h2><i class="fa-solid fa-user-shield"></i>Definições de Privacidade</h2>
-                <form method="POST">
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
-                    <input type="hidden" name="active_tab" value="privacy">
-                    <div class="form-group">
-                        <div class="checkbox-group">
-                            <input type="checkbox" name="profile_public" id="profile_public" <?php echo ($user['profile_public'] ?? 1) ? 'checked' : ''; ?>>
-                            <label for="profile_public">Perfil Público</label>
-                        </div>
-                    <p class="helper-text">Permite que outros utilizadores vejam o teu perfil</p>
-                    </div>
-
-                    <div class="form-group">
-                        <div class="checkbox-group">
-                            <input type="checkbox" name="show_reviews" id="show_reviews" <?php echo ($user['show_reviews'] ?? 1) ? 'checked' : ''; ?>>
-                            <label for="show_reviews">Mostrar Minhas Reviews</label>
-                        </div>
-                    <p class="helper-text">Permite que outros vejam as tuas avaliações de jogos</p>
-                    </div>
-
-                <button type="submit" name="update_privacy" class="btn">Guardar Privacidade</button>
-                </form>
-        </div>
-    </div>
-
-        <!-- TAB: PREFERÊNCIAS -->
-    <div id="preferences" class="tab-content <?php echo $active_tab === 'preferences' ? 'active' : ''; ?>">
-        <div class="settings-section">
-            <h2><i class="fa-solid fa-palette"></i>Tema</h2>
-                <form method="POST">
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
-                    <input type="hidden" name="active_tab" value="preferences">
-                    <div class="form-group">
-                        <label>Escolhe o teu tema preferido</label>
-                        <select name="theme">
-                            <option value="dark" <?php echo ($user['theme'] ?? 'dark') === 'dark' ? 'selected' : ''; ?>>Escuro (padrão)</option>
-                            <option value="light" <?php echo ($user['theme'] ?? 'dark') === 'light' ? 'selected' : ''; ?>>Claro</option>
-                        </select>
-                    </div>
-                <button type="submit" name="change_theme" class="btn">Guardar Tema</button>
-                </form>
-        </div>
-    </div>
-
-        <!-- TAB: ZONA DE PERIGO -->
-    <div id="danger" class="tab-content <?php echo $active_tab === 'danger' ? 'active' : ''; ?>">
-        <div class="settings-section danger-zone">
-            <h2><i class="fa-solid fa-triangle-exclamation"></i>Eliminar Conta</h2>
-            <p class="helper-text" style="color:#fecaca;">
-                <strong>Aviso:</strong> Eliminar a tua conta é uma ação permanente. Todos os teus dados, reviews e informações de perfil serão apagados e não poderão ser recuperados.
-            </p>
-                <form method="POST" onsubmit="return confirm('Tens a certeza que pretendes eliminar a tua conta permanentemente? Esta ação não pode ser desfeita!');">
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
-                    <input type="hidden" name="active_tab" value="danger">
-                    <div class="form-group">
-                        <label>Confirma a tua password para eliminar a conta</label>
-                        <input type="password" name="delete_password" required placeholder="Escreve a tua password">
-                    </div>
-                <button type="submit" name="delete_account" class="btn btn-danger">Eliminar Permanentemente</button>
-                </form>
-        </div>
-    </div>
         </div>
     </div>
 </div>

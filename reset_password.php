@@ -83,67 +83,116 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['token'])) {
         :root {
             --primary: #00b4ff;
             --secondary: #8a2be2;
-            --bg-dark: #0f0f12;
-            --glass: rgba(255, 255, 255, 0.05);
+            --bg-dark: #0b0c0f;
             --border: rgba(255, 255, 255, 0.1);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
 
         body {
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            min-height: 100vh;
             background-color: var(--bg-dark);
+            color: #fff;
+        }
+
+        .auth-layout {
+            width: 100%;
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
             overflow: hidden;
+        }
+
+        .games-panel {
             position: relative;
-        }
-
-        /* --- Fundo Animado --- */
-        .background-anim {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            background: #08090c;
             overflow: hidden;
         }
 
-        .orb {
+        .banner-bg-container {
             position: absolute;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.6;
-            animation: float 20s infinite ease-in-out alternate;
+            inset: 0;
+            z-index: 1;
+            -webkit-mask-image: linear-gradient(to right, black 15%, transparent 98%);
+            mask-image: linear-gradient(to right, black 15%, transparent 98%);
         }
 
-        .orb-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, var(--secondary), transparent 70%); animation-delay: 0s; }
-        .orb-2 { bottom: -10%; right: -10%; width: 60vw; height: 60vw; background: radial-gradient(circle, var(--primary), transparent 70%); animation-delay: -5s; }
-        .orb-3 { top: 40%; left: 40%; width: 30vw; height: 30vw; background: radial-gradient(circle, #ff007a, transparent 70%); animation-duration: 25s; opacity: 0.4; }
-
-        @keyframes float {
-            0% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(30px, -50px) scale(1.1); }
-            66% { transform: translate(-20px, 20px) scale(0.9); }
-            100% { transform: translate(0, 0) scale(1); }
+        .banner-game-covers {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(125px, 1fr));
+            gap: 14px;
+            width: 112%;
+            margin-left: -6%;
+            padding: 20px;
+            opacity: 0.48;
+            transform: rotate(-2deg) scale(1.05);
         }
 
-        .grid-overlay {
-            position: absolute;
+        .banner-cover {
             width: 100%;
-            height: 100%;
-            background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-            background-size: 50px 50px;
-            z-index: 2;
-            pointer-events: none;
+            border-radius: 8px;
+            box-shadow: 0 5px 16px rgba(0, 0, 0, 0.5);
+            aspect-ratio: 2/3;
+            object-fit: cover;
+            animation: scrollUp 60s linear infinite;
+            will-change: transform;
         }
 
-        /* --- Cartão de Reset --- */
+        .banner-cover:nth-child(2n) { animation-duration: 75s; margin-top: -40px; }
+        .banner-cover:nth-child(3n) { animation-duration: 55s; margin-top: 20px; }
+        .banner-cover:nth-child(5n) { animation-duration: 85s; }
+
+        @keyframes scrollUp {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-400px); }
+        }
+
+        .games-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            background:
+                linear-gradient(90deg, rgba(11,12,15,0.15) 0%, rgba(11,12,15,0.65) 72%, rgba(11,12,15,0.95) 100%),
+                radial-gradient(circle at 20% 20%, rgba(0,180,255,0.18), transparent 45%);
+        }
+
+        .games-content {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 34px;
+        }
+
+        .games-content h2 {
+            font-size: clamp(1.9rem, 3vw, 3rem);
+            line-height: 1.05;
+            margin-bottom: 10px;
+            text-shadow: 0 6px 24px rgba(0, 0, 0, 0.75);
+        }
+
+        .games-content p {
+            color: #c9d0db;
+            max-width: 420px;
+            font-size: 0.98rem;
+            line-height: 1.5;
+        }
+
+        .auth-panel {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: radial-gradient(circle at top right, rgba(138, 43, 226, 0.14), transparent 50%), #0b0c10;
+        }
+
         .reset-card {
             position: relative;
-            z-index: 10;
+            z-index: 2;
             background: rgba(20, 20, 25, 0.6);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
@@ -162,19 +211,38 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['token'])) {
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
         }
 
-        /* Logo Area */
         .logo-area { text-align: center; margin-bottom: 25px; }
-        .logo-area img { width: 70px; margin-bottom: 5px; }
 
-        h1 { 
-            text-align: center;
-            font-size: 26px; 
-            font-weight: 700; 
-            color: #fff; 
-            margin-bottom: 25px; 
+        .logo-link {
+            display: inline-block;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-decoration: none;
         }
 
-        /* Inputs */
+        .logo-link:hover {
+            transform: scale(1.1);
+            filter: drop-shadow(0 0 15px rgba(0, 180, 255, 0.6));
+        }
+
+        .brand-logo {
+            display: inline-block;
+            margin-bottom: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 900;
+            font-size: 2rem;
+            color: #fff;
+            letter-spacing: -1px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 28px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 25px;
+        }
+
         .input-group { position: relative; margin-bottom: 20px; }
 
         label {
@@ -187,7 +255,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['token'])) {
 
         input {
             width: 100%;
-            padding: 14px 16px 14px 45px;
+            padding: 14px 50px 14px 45px;
             background: rgba(0, 0, 0, 0.2);
             border: 1px solid var(--border);
             border-radius: 12px;
@@ -200,7 +268,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['token'])) {
         .input-group i {
             position: absolute;
             left: 16px;
-            top: 42px; /* Ajustado para alinhar com o input considerando o label */
+            top: 42px;
             color: #6b7280;
             transition: 0.3s;
             pointer-events: none;
@@ -214,7 +282,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['token'])) {
         }
         input:focus + i { color: var(--primary); }
 
-        /* Botão */
         button, .btn {
             width: 100%;
             padding: 14px;
@@ -240,7 +307,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['token'])) {
             box-shadow: 0 8px 25px rgba(138, 43, 226, 0.4);
         }
 
-        /* Mensagens */
         .msg-box {
             padding: 15px;
             border-radius: 12px;
@@ -279,67 +345,123 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['token'])) {
         }
         .links a:hover { color: #fff; }
 
+        @media (max-width: 980px) {
+            .auth-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .games-panel {
+                min-height: 270px;
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            }
+
+            .banner-bg-container {
+                -webkit-mask-image: linear-gradient(to bottom, black 20%, transparent 98%);
+                mask-image: linear-gradient(to bottom, black 20%, transparent 98%);
+            }
+        }
+
         @media (max-width: 480px) {
-            .reset-card { padding: 40px 25px; }
+            .auth-panel { padding: 14px; }
+            .reset-card { padding: 34px 22px; }
+            .games-content { padding: 20px; }
+            .games-content h2 { font-size: 1.6rem; }
         }
     </style>
 </head>
 <body>
-
-    <div class="background-anim">
-        <div class="orb orb-1"></div>
-        <div class="orb orb-2"></div>
-        <div class="orb orb-3"></div>
-    </div>
-    <div class="grid-overlay"></div>
-
-    <div class="reset-card">
-        <div class="logo-area">
-            <img src="img/logo.png" alt="Logo" onerror="this.style.display='none'; document.getElementById('default-icon').style.display='inline-block';">
-            <i id="default-icon" class="fa-solid fa-gamepad" style="font-size: 50px; color: var(--primary); display: none;"></i>
-        </div>
-        
-        <h1>Nova Password</h1>
-
-        <?php if ($msg): ?>
-            <div class="msg-box <?php echo $msgClass; ?>">
-                <?php if($msgClass == 'success'): ?>
-                    <i class="fa-solid fa-check-circle"></i>
-                <?php else: ?>
-                    <i class="fa-solid fa-circle-exclamation"></i>
-                <?php endif; ?>
-                <span><?php echo $msg; ?></span>
+    <div class="auth-layout">
+        <aside class="games-panel" aria-hidden="true">
+            <div class="banner-bg-container">
+                <div class="banner-game-covers" id="auth-banner-covers"></div>
             </div>
-        <?php endif; ?>
+            <div class="games-overlay"></div>
+            <div class="games-content">
+                <h2>Define uma nova password.</h2>
+                <p>Protege a tua conta e volta a aceder ao teu perfil em segundos.</p>
+            </div>
+        </aside>
 
-        <?php if ($validToken): ?>
-            <form method="POST">
-                <input type="hidden" name="token" value="<?php echo htmlspecialchars($token); ?>">
-                
-                <div class="input-group">
-                    <label for="password">Nova Password</label>
-                    <input type="password" id="password" name="password" placeholder="Mínimo 6 caracteres" required>
-                    <i class="fa-solid fa-lock"></i>
+        <main class="auth-panel">
+            <div class="reset-card">
+                <div class="logo-area">
+                    <a href="index.php" class="logo-link" title="Voltar ao início">
+                        <span class="brand-logo">GameList</span>
+                    </a>
                 </div>
 
-                <div class="input-group">
-                    <label for="confirm_password">Confirmar Password</label>
-                    <input type="password" id="confirm_password" name="confirm_password" placeholder="Repete a password" required>
-                    <i class="fa-solid fa-lock"></i>
+                <h1>Nova Password</h1>
+
+                <?php if ($msg): ?>
+                    <div class="msg-box <?php echo $msgClass; ?>">
+                        <?php if($msgClass == 'success'): ?>
+                            <i class="fa-solid fa-check-circle"></i>
+                        <?php else: ?>
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                        <?php endif; ?>
+                        <span><?php echo $msg; ?></span>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($validToken): ?>
+                    <form method="POST">
+                        <input type="hidden" name="token" value="<?php echo htmlspecialchars($token); ?>">
+
+                        <div class="input-group">
+                            <label for="password">Nova Password</label>
+                            <input type="password" id="password" name="password" placeholder="Mínimo 6 caracteres" required>
+                            <i class="fa-solid fa-lock"></i>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="confirm_password">Confirmar Password</label>
+                            <input type="password" id="confirm_password" name="confirm_password" placeholder="Repete a password" required>
+                            <i class="fa-solid fa-lock"></i>
+                        </div>
+
+                        <button type="submit">Alterar Password</button>
+                    </form>
+                <?php elseif ($msgClass === "success"): ?>
+                    <a href="login.php" class="btn">Ir para iniciar sessão</a>
+                <?php else: ?>
+                    <a href="forgot_password.php" class="btn">Pedir Novo Link</a>
+                <?php endif; ?>
+
+                <div class="links">
+                    <a href="index.php">← Voltar à Página Inicial</a>
                 </div>
-
-                <button type="submit">Alterar Password</button>
-            </form>
-        <?php elseif ($msgClass === "success"): ?>
-            <a href="login.php" class="btn">Ir para iniciar sessão</a>
-        <?php else: ?>
-            <a href="forgot_password.php" class="btn">Pedir Novo Link</a>
-        <?php endif; ?>
-
-        <div class="links">
-            <a href="index.php">← Voltar à Página Inicial</a>
-        </div>
+            </div>
+        </main>
     </div>
 
+    <script>
+        const apiKey = '5fd330b526034329a8f0d9b6676241c5';
+
+        async function loadAuthBannerCovers() {
+            try {
+                const res = await fetch(`https://api.rawg.io/api/games?key=${apiKey}&page_size=40&ordering=-added`);
+                const data = await res.json();
+                const container = document.getElementById('auth-banner-covers');
+                if (!container || !Array.isArray(data.results)) return;
+
+                container.innerHTML = '';
+                data.results.forEach(game => {
+                    if (game.background_image) {
+                        const img = document.createElement('img');
+                        img.src = game.background_image.replace('/media/games/', '/media/crop/600/400/games/');
+                        img.className = 'banner-cover';
+                        img.loading = 'lazy';
+                        img.alt = '';
+                        container.appendChild(img);
+                    }
+                });
+            } catch (e) {
+                console.error('Erro a carregar capas de jogos:', e);
+            }
+        }
+
+        loadAuthBannerCovers();
+    </script>
 </body>
 </html>

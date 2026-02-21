@@ -79,7 +79,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         :root {
             --primary: #00b4ff;
             --secondary: #8a2be2;
-            --bg-dark: #0f0f12;
+            --bg-dark: #0b0c0f;
             --glass: rgba(255, 255, 255, 0.05);
             --border: rgba(255, 255, 255, 0.1);
             --success: #2ecc71;
@@ -90,64 +90,115 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
 
         body {
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            min-height: 100vh;
             background-color: var(--bg-dark);
+            color: #fff;
+        }
+
+        .auth-layout {
+            width: 100%;
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
             overflow: hidden;
+        }
+
+        .games-panel {
             position: relative;
-        }
-
-        /* --- Fundo Animado (Aurora) --- */
-        .background-anim {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            background: #08090c;
             overflow: hidden;
         }
 
-        .orb {
+        .banner-bg-container {
             position: absolute;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.6;
-            animation: float 20s infinite ease-in-out alternate;
+            inset: 0;
+            z-index: 1;
+            -webkit-mask-image: linear-gradient(to right, black 15%, transparent 98%);
+            mask-image: linear-gradient(to right, black 15%, transparent 98%);
         }
 
-        .orb-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, var(--secondary), transparent 70%); animation-delay: 0s; }
-        .orb-2 { bottom: -10%; right: -10%; width: 60vw; height: 60vw; background: radial-gradient(circle, var(--primary), transparent 70%); animation-delay: -5s; }
-        .orb-3 { top: 40%; left: 40%; width: 30vw; height: 30vw; background: radial-gradient(circle, #ff007a, transparent 70%); animation-duration: 25s; opacity: 0.4; }
-
-        @keyframes float {
-            0% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(30px, -50px) scale(1.1); }
-            66% { transform: translate(-20px, 20px) scale(0.9); }
-            100% { transform: translate(0, 0) scale(1); }
+        .banner-game-covers {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(125px, 1fr));
+            gap: 14px;
+            width: 112%;
+            margin-left: -6%;
+            padding: 20px;
+            opacity: 0.48;
+            transform: rotate(-2deg) scale(1.05);
         }
 
-        .grid-overlay {
-            position: absolute;
+        .banner-cover {
             width: 100%;
-            height: 100%;
-            background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-            background-size: 50px 50px;
+            border-radius: 8px;
+            box-shadow: 0 5px 16px rgba(0, 0, 0, 0.5);
+            aspect-ratio: 2/3;
+            object-fit: cover;
+            animation: scrollUp 60s linear infinite;
+            will-change: transform;
+        }
+
+        .banner-cover:nth-child(2n) { animation-duration: 75s; margin-top: -40px; }
+        .banner-cover:nth-child(3n) { animation-duration: 55s; margin-top: 20px; }
+        .banner-cover:nth-child(5n) { animation-duration: 85s; }
+
+        @keyframes scrollUp {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-400px); }
+        }
+
+        .games-overlay {
+            position: absolute;
+            inset: 0;
             z-index: 2;
-            pointer-events: none;
+            background:
+                linear-gradient(90deg, rgba(11,12,15,0.15) 0%, rgba(11,12,15,0.65) 72%, rgba(11,12,15,0.95) 100%),
+                radial-gradient(circle at 20% 20%, rgba(0,180,255,0.18), transparent 45%);
+        }
+
+        .games-content {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 34px;
+        }
+
+        .games-content h2 {
+            font-size: clamp(1.9rem, 3vw, 3rem);
+            line-height: 1.05;
+            margin-bottom: 10px;
+            text-shadow: 0 6px 24px rgba(0, 0, 0, 0.75);
+        }
+
+        .games-content p {
+            color: #c9d0db;
+            max-width: 420px;
+            font-size: 0.98rem;
+            line-height: 1.5;
+        }
+
+        .auth-panel {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: radial-gradient(circle at top right, rgba(138, 43, 226, 0.14), transparent 50%), #0b0c10;
         }
 
         /* --- Cartão de Registo --- */
         .register-card {
             position: relative;
-            z-index: 10;
+            z-index: 2;
             background: rgba(20, 20, 25, 0.6);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--border);
-            padding: 40px 40px;
+            padding: 50px 40px;
             border-radius: 24px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
             width: 100%;
@@ -162,7 +213,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
         }
 
-        .logo-area { margin-bottom: 25px; }
+        .logo-area { margin-bottom: 30px; }
 
         .logo-link {
             display: inline-block;
@@ -175,17 +226,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             filter: drop-shadow(0 0 15px rgba(0, 180, 255, 0.6));
         }
 
-        .logo-area img { width: 70px; margin-bottom: 5px; }
+        .brand-logo {
+            display: inline-block;
+            margin-bottom: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 900;
+            font-size: 2rem;
+            color: #fff;
+            letter-spacing: -1px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
 
-        h1 { font-size: 26px; font-weight: 700; color: #fff; margin-bottom: 8px; }
-        .subtitle { color: #9ca3af; font-size: 14px; margin-bottom: 30px; }
+        h1 { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+        .subtitle { color: #9ca3af; font-size: 14px; margin-bottom: 35px; }
 
         /* --- Inputs e Ícones --- */
-        .input-group { position: relative; margin-bottom: 15px; text-align: left; }
+        .input-group { position: relative; margin-bottom: 20px; text-align: left; }
 
         input {
             width: 100%;
-            padding: 14px 16px 14px 45px; /* Espaço para o ícone à esquerda */
+            padding: 14px 50px 14px 45px;
             background: rgba(0, 0, 0, 0.2);
             border: 1px solid var(--border);
             border-radius: 12px;
@@ -195,12 +255,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             transition: all 0.3s ease;
         }
 
-        /* Input específico para password (mais espaço à direita para o olho) */
-        input[type="password"], input[name="password"] {
-            padding-right: 50px; 
-        }
-
-        .input-group > i.fa-input-icon {
+        .input-group > i {
             position: absolute;
             left: 16px;
             top: 50%;
@@ -228,10 +283,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             cursor: pointer;
             z-index: 10;
             padding: 5px;
-            color: #6b7280;
-            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .toggle-password:hover { color: #fff; }
+
+        .toggle-password i {
+            color: #6b7280;
+            font-size: 16px;
+            transition: color 0.3s;
+        }
+
+        .toggle-password:hover i { color: #fff; }
 
         /* Botão Registar */
         button {
@@ -310,26 +373,49 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             text-shadow: 0 0 10px rgba(138, 43, 226, 0.5);
         }
 
+        @media (max-width: 980px) {
+            .auth-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .games-panel {
+                min-height: 270px;
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            }
+
+            .banner-bg-container {
+                -webkit-mask-image: linear-gradient(to bottom, black 20%, transparent 98%);
+                mask-image: linear-gradient(to bottom, black 20%, transparent 98%);
+            }
+        }
+
         @media (max-width: 480px) {
-            .register-card { padding: 40px 25px; }
-            .orb { opacity: 0.4; }
+            .auth-panel { padding: 14px; }
+            .register-card { padding: 34px 22px; }
+            .games-content { padding: 20px; }
+            .games-content h2 { font-size: 1.6rem; }
         }
     </style>
 </head>
 <body>
+    <div class="auth-layout">
+        <aside class="games-panel" aria-hidden="true">
+            <div class="banner-bg-container">
+                <div class="banner-game-covers" id="auth-banner-covers"></div>
+            </div>
+            <div class="games-overlay"></div>
+            <div class="games-content">
+                <h2>Cria a tua biblioteca de jogos.</h2>
+                <p>Regista-te para guardar favoritos, escrever reviews e seguir a comunidade.</p>
+            </div>
+        </aside>
 
-    <div class="background-anim">
-        <div class="orb orb-1"></div>
-        <div class="orb orb-2"></div>
-        <div class="orb orb-3"></div>
-    </div>
-    <div class="grid-overlay"></div>
-
-    <div class="register-card">
+        <main class="auth-panel">
+            <div class="register-card">
         <div class="logo-area">
             <a href="index.php" class="logo-link" title="Voltar ao início">
-                <img src="img/logo.png" alt="Logo" onerror="this.style.display='none'; document.getElementById('default-icon').style.display='block';">
-                <i id="default-icon" class="fa-solid fa-gamepad" style="font-size: 50px; color: var(--primary); display: none;"></i>
+                <span class="brand-logo">GameList</span>
             </a>
             <h1>Cria a tua conta</h1>
             <p class="subtitle">Junta-te à comunidade GameList</p>
@@ -368,8 +454,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <span>Já tens conta? <a href="login.php">Inicia sessão aqui</a></span>
         </div>
     </div>
+        </main>
+    </div>
 
     <script>
+        const apiKey = '5fd330b526034329a8f0d9b6676241c5';
+
+        async function loadAuthBannerCovers() {
+            try {
+                const res = await fetch(`https://api.rawg.io/api/games?key=${apiKey}&page_size=40&ordering=-added`);
+                const data = await res.json();
+                const container = document.getElementById('auth-banner-covers');
+                if (!container || !Array.isArray(data.results)) return;
+
+                container.innerHTML = '';
+                data.results.forEach(game => {
+                    if (game.background_image) {
+                        const img = document.createElement('img');
+                        img.src = game.background_image.replace('/media/games/', '/media/crop/600/400/games/');
+                        img.className = 'banner-cover';
+                        img.loading = 'lazy';
+                        img.alt = '';
+                        container.appendChild(img);
+                    }
+                });
+            } catch (e) {
+                console.error('Erro a carregar capas de jogos:', e);
+            }
+        }
+
         function togglePassword() {
             const passwordInput = document.getElementById('password');
             const eyeIcon = document.getElementById('eye-icon');
@@ -384,6 +497,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 eyeIcon.classList.add('fa-eye');
             }
         }
+
+        loadAuthBannerCovers();
     </script>
 </body>
 </html>
