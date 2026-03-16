@@ -30,31 +30,58 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     exit;
 }
 
+$page_title = 'Editar Review - Admin';
 include 'includes/header.php';
 ?>
-<!DOCTYPE html>
-<title>Editar Review - Admin</title>
-</head>
-<body>
-    <style>
-        body { background: #111; color: #fff; font-family: Arial, sans-serif; padding-top: 64px; }
-        .container { max-width: 600px; margin: 20px auto; padding: 20px; background: #222; border-radius: 8px; }
-        form { display: flex; flex-direction: column; }
-        label { margin-top: 10px; }
-        input, textarea { padding: 10px; margin-top: 5px; background: #333; color: #fff; border: 1px solid #444; }
-        button { margin-top: 20px; padding: 10px; background: #00bfff; color: #fff; border: none; cursor: pointer; }
-        button:hover { background: #0080ff; }
-    </style>
-    <div class="container">
-        <h1>Editar Review</h1>
-        <p><strong>Jogo:</strong> <?php echo htmlspecialchars($review['game_name']); ?></p>
-        <p><strong>Utilizador:</strong> <?php echo htmlspecialchars($conn->query("SELECT username FROM users WHERE id = " . $review['user_id'])->fetch_assoc()['username']); ?></p>
-        <form method="POST">
-            <label for="rating">Nota (1-10):</label>
-            <input type="number" id="rating" name="rating" min="1" max="10" value="<?php echo $review['rating']; ?>" required>
-            <label for="comment">Comentário:</label>
-            <textarea id="comment" name="comment" rows="5" required><?php echo htmlspecialchars($review['comment']); ?></textarea>
-            <button type="submit">Guardar Alterações</button>
-        </form>
-    </div>
+<style>
+    .admin-edit-container {
+        max-width: 800px;
+        margin: 90px auto 60px;
+        padding: 20px;
+        background: #16171c;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 14px;
+        color: #fff;
+    }
+    .admin-edit-container h1 { margin-bottom: 18px; }
+    .admin-edit-container form label { display: block; margin-top: 12px; font-weight:500; }
+    .admin-edit-container form input,
+    .admin-edit-container form textarea {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        background: #242629;
+        border: 1px solid rgba(255,255,255,0.1);
+        color: #fff;
+        border-radius: 6px;
+    }
+    .admin-edit-container form button {
+        margin-top: 20px;
+        padding: 10px 20px;
+        background: var(--accent);
+        color: #000;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight:600;
+    }
+    .admin-edit-container form button:hover {
+        background: #0080ff;
+    }
+</style>
+
+<div class="admin-edit-container">
+    <a href="admin.php" class="btn btn-sm btn-primary mb-3">← Voltar ao Painel</a>
+    <h1>Editar Review</h1>
+    <p><strong>Jogo:</strong> <?php echo htmlspecialchars($review['game_name']); ?></p>
+    <p><strong>Utilizador:</strong> <?php echo htmlspecialchars($conn->query("SELECT username FROM users WHERE id = " . $review['user_id'])->fetch_assoc()['username']); ?></p>
+    <form method="POST">
+        <label for="rating">Nota (1-10):</label>
+        <input type="number" id="rating" name="rating" min="1" max="10" value="<?php echo $review['rating']; ?>" required>
+        <label for="comment">Comentário:</label>
+        <textarea id="comment" name="comment" rows="5" required><?php echo htmlspecialchars($review['comment']); ?></textarea>
+        <button type="submit">Guardar Alterações</button>
+    </form>
+</div>
+
 <?php include 'includes/footer.php'; ?>

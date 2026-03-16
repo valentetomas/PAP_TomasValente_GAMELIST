@@ -77,6 +77,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $feedback = "Review rejeitada."; $feedback_type = "error";
         }
     }
+
+    // Edição inline de reviews
+    if (isset($_POST['edit_review'])) {
+        $rid = intval($_POST['review_id']);
+        $rating = intval($_POST['rating']);
+        $comment = $conn->real_escape_string($_POST['comment']);
+        $conn->query("UPDATE reviews SET rating = $rating, comment = '$comment' WHERE id = $rid");
+        logAction($rid, "Review Edited (admin)");
+        $feedback = "Review actualizada."; $feedback_type = "success";
+    }
 }
 
 function logAction($target, $details) {
@@ -173,6 +183,7 @@ $logs = $conn->query("SELECT l.*, u.username as admin_name FROM admin_logs l LEF
         /* FILTROS E AÇÕES */
         .toolbar { display: flex; gap: 15px; margin-bottom: 20px; background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border); align-items: center; flex-wrap: wrap; }
         .filter-select { background: #000; border: 1px solid var(--border); color: #fff; padding: 8px 12px; border-radius: 6px; }
+        .role-select { background: #000; border: 1px solid var(--border); color: #fff; padding: 4px 6px; border-radius: 4px; font-size:0.85rem; }
         
         /* Floating Bulk Action Bar */
         .bulk-actions { 
@@ -225,7 +236,8 @@ $logs = $conn->query("SELECT l.*, u.username as admin_name FROM admin_logs l LEF
 
     <nav class="sidebar">
         <div class="brand">
-            <img src="img/logo.png" alt="Logo">
+            <!-- logo removed per user request; admin label only -->
+            <strong style="color:var(--accent); font-size:1.2rem;">Admin</strong>
         </div>
         
         <div class="nav-item active" onclick="switchTab('dashboard', this)">
@@ -329,8 +341,14 @@ $logs = $conn->query("SELECT l.*, u.username as admin_name FROM admin_logs l LEF
                                     <?php echo htmlspecialchars($rev['comment']); ?>
                                 </td>
                                 <td><span style="color:#ffcc00">★ <?php echo $rev['rating']; ?></span></td>
-                                <td>
-                                    <form method="POST" style="display:flex; gap:5px;">
+                                <td style="display:flex; gap:5px; align-items:center;">
+                                    <button type="button" class="btn-sm btn-primary edit-btn" title="Editar"
+                                    data-id="<?php echo $rev['id']; ?>"
+            data-rating="<?php echo $rev['rating']; ?>"
+            data-comment="<?php echo htmlspecialchars($rev['comment'], ENT_QUOTES); ?>">
+            <i class="fa-solid fa-pen"></i>
+        </button>
+                                    <form method="POST" style="display:flex; gap:5px; margin:0;">
                                         <input type="hidden" name="review_id" value="<?php echo $rev['id']; ?>">
                                         <button type="submit" name="review_action" value="approve" class="btn-sm btn-success"><i class="fa-solid fa-check"></i></button>
                                         <button type="button" onclick="openRejectModal(<?php echo $rev['id']; ?>)" class="btn-sm btn-danger"><i class="fa-solid fa-xmark"></i></button>
@@ -386,7 +404,14 @@ $logs = $conn->query("SELECT l.*, u.username as admin_name FROM admin_logs l LEF
                                 </td>
                                 <td><?php echo htmlspecialchars($u['email']); ?></td>
                                 <td>
-                                    <span class="badge <?php echo $u['role']=='admin'?'bg-admin':'bg-user'; ?>"><?php echo $u['role']; ?></span>
+                                    <form method="POST" class="role-form" style="display:inline;">
+                                        <input type="hidden" name="user_id" value="<?php echo $u['id']; ?>">
+                                        <select name="role" class="role-select" onchange="this.form.submit()">
+                                            <option value="user" <?php echo ($u['role']=='user') ? 'selected' : ''; ?>>user</option>
+                                            <option value="admin" <?php echo ($u['role']=='admin') ? 'selected' : ''; ?>>admin</option>
+                                        </select>
+                                        <input type="hidden" name="update_role" value="1">
+                                    </form>
                                 </td>
                                 <td>
                                     <label class="toggle-switch">
@@ -464,8 +489,14 @@ $logs = $conn->query("SELECT l.*, u.username as admin_name FROM admin_logs l LEF
                             <td style="color:var(--text-muted); font-size:0.85rem; max-width:250px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><?php echo htmlspecialchars($rev['comment']); ?></td>
                             <td><span style="color:#ffcc00;">★ <?php echo $rev['rating']; ?></span></td>
                             <td style="font-size:0.8rem; color:var(--text-muted);"><?php echo date('d/m/Y', strtotime($rev['created_at'])); ?></td>
-                            <td>
-                                <form method="POST" style="display:inline;">
+                            <td style="display:flex; gap:5px; align-items:center;">
+                                <button type="button" class="btn-sm btn-primary edit-btn" title="Editar"
+            data-id="<?php echo $rev['id']; ?>"
+            data-rating="<?php echo $rev['rating']; ?>"
+            data-comment="<?php echo htmlspecialchars($rev['comment'], ENT_QUOTES); ?>">
+            <i class="fa-solid fa-pen"></i>
+        </button>
+                                <form method="POST" style="display:inline; margin:0;">
                                     <input type="hidden" name="review_id" value="<?php echo $rev['id']; ?>">
                                     <input type="hidden" name="review_action" value="reject">
                                     <button type="button" onclick="confirmDelete(<?php echo $rev['id']; ?>)" class="btn-sm btn-danger"><i class="fa-solid fa-trash"></i></button>
@@ -498,6 +529,26 @@ $logs = $conn->query("SELECT l.*, u.username as admin_name FROM admin_logs l LEF
                 </div>
             </form>
         </div>
+    </div>
+
+    <!-- Edit review modal -->
+    <div id="editModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="margin-top:0;">Editar Review</h3>
+            <form method="POST" id="editModalForm">
+                <input type="hidden" name="review_id" id="editReviewId">
+                <input type="hidden" name="edit_review" value="1">
+                <label for="editRating">Nota (1-10):</label>
+                <input type="number" id="editRating" name="rating" min="1" max="10" style="width:100%; padding:8px; margin:5px 0 15px; background:#000; border:1px solid #444; color:#fff;" required>
+                <label for="editComment">Comentário:</label>
+                <textarea id="editComment" name="comment" rows="4" style="width:100%; padding:8px; margin:5px 0 15px; background:#000; border:1px solid #444; color:#fff;" required></textarea>
+                <div style="display:flex; gap:10px;">
+                    <button type="button" onclick="document.getElementById('editModal').style.display='none'" class="btn-sm" style="background:#444; color:#fff;">Cancelar</button>
+                    <button type="submit" class="btn-sm btn-success">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
     </div>
 
     <script>
@@ -545,6 +596,12 @@ $logs = $conn->query("SELECT l.*, u.username as admin_name FROM admin_logs l LEF
             }
         }
 
+        // Toggle ban status via hidden form
+        function toggleBan(uid) {
+            document.getElementById('banUserId').value = uid;
+            document.getElementById('banForm').submit();
+        }
+
         // Confirmar Delete de Review
         function confirmDelete(id) {
             if(confirm('Apagar esta review permanentemente?\n\nEsta ação não pode ser desfeita.')) {
@@ -559,6 +616,26 @@ $logs = $conn->query("SELECT l.*, u.username as admin_name FROM admin_logs l LEF
                 form.submit();
             }
         }
+
+        // Abrir modal de edição
+        function openEditModal(id, rating, comment) {
+            document.getElementById('editReviewId').value = id;
+            document.getElementById('editRating').value = rating;
+            document.getElementById('editComment').value = comment;
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        // delegação para botões com dados (não depender de onclick)
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = btn.dataset.id;
+                    const rating = btn.dataset.rating;
+                    const comment = btn.dataset.comment;
+                    openEditModal(id, rating, comment);
+                });
+            });
+        });
     </script>
 
 </body>
