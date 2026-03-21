@@ -1,82 +1,122 @@
 <?php
 include 'includes/header.php';
 
+// --- CACHE SIMPLES PARA API (arquivo local em uploads/cache) ---
+function getCacheFilePath($key) {
+    $safe = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $key);
+    $dir = __DIR__ . '/uploads/cache';
+    if (!is_dir($dir)) {
+        mkdir($dir, 0755, true);
+    }
+    return $dir . '/' . $safe . '.cache';
+}
+
+function readCache($key, $ttl = 3600) {
+    $path = getCacheFilePath($key);
+    if (!file_exists($path)) return false;
+    if (time() - filemtime($path) > $ttl) {
+        @unlink($path);
+        return false;
+    }
+    return file_get_contents($path);
+}
+
+function writeCache($key, $content) {
+    $path = getCacheFilePath($key);
+    file_put_contents($path, $content, LOCK_EX);
+}
+
+function fetchUrlWithCache($url, $cacheKey, $ttl = 3600) {
+    $cached = readCache($cacheKey, $ttl);
+    if ($cached !== false) {
+        return $cached;
+    }
+
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 4);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 7);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['User-Agent: Mozilla/5.0']);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($response !== false && $httpCode >= 200 && $httpCode < 300) {
+        writeCache($cacheKey, $response);
+        return $response;
+    }
+
+    return false;
+}
+
 // Função para traduzir texto para português (divide em chunks se for muito longo)
 function translateToPortuguese($text) {
     if (empty($text) || strlen($text) < 10) return $text;
-    
-    $maxChars = 450; // Deixar margem antes do limite de 500
-    
-    // Se o texto é pequeno, traduz direto
+
+    $maxChars = 450;
+
     if (strlen($text) <= $maxChars) {
-        $translationURL = "https://api.mymemory.translated.net/get?q=" . urlencode($text) . "&langpair=en|pt";
-        
-        $ch = curl_init($translationURL);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['User-Agent: Mozilla/5.0']);
-        
-        $response = json_decode(curl_exec($ch), true);
-        curl_close($ch);
-        
-        if (isset($response['responseData']['translatedText'])) {
-            $translatedText = $response['responseData']['translatedText'];
-            // Verifica se contém aviso de limite
-            if (strpos($translatedText, 'MYMEMORY WARNING') === false) {
-                return $translatedText;
+        $chunks = [$text];
+    } else {
+        $sentences = preg_split('/(?<=[.!?])\s+/', $text);
+        $chunks = [];
+        $currentChunk = '';
+
+        foreach ($sentences as $sentence) {
+            if (strlen($currentChunk) + strlen($sentence) + 1 > $maxChars) {
+                if (!empty($currentChunk)) {
+                    $chunks[] = $currentChunk;
+                }
+                $currentChunk = $sentence;
+            } else {
+                $currentChunk .= (empty($currentChunk) ? '' : ' ') . $sentence;
             }
         }
-        return $text; // Se erro ou limite, retorna original
-    }
-    
-    // Se é muito longo, divide em partes
-    $sentences = preg_split('/(?<=[.!?])\s+/', $text);
-    $chunks = [];
-    $currentChunk = '';
-    
-    foreach ($sentences as $sentence) {
-        if (strlen($currentChunk) + strlen($sentence) + 1 > $maxChars) {
-            if (!empty($currentChunk)) {
-                $chunks[] = $currentChunk;
-            }
-            $currentChunk = $sentence;
-        } else {
-            $currentChunk .= (empty($currentChunk) ? '' : ' ') . $sentence;
+
+        if (!empty($currentChunk)) {
+            $chunks[] = $currentChunk;
         }
     }
-    
-    if (!empty($currentChunk)) {
-        $chunks[] = $currentChunk;
-    }
-    
-    // Traduz cada chunk
+
     $translatedText = '';
     foreach ($chunks as $chunk) {
         $translationURL = "https://api.mymemory.translated.net/get?q=" . urlencode($chunk) . "&langpair=en|pt";
-        
+
         $ch = curl_init($translationURL);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 4);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 7);
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['User-Agent: Mozilla/5.0']);
-        
+
         $response = json_decode(curl_exec($ch), true);
         curl_close($ch);
-        
+
         if (isset($response['responseData']['translatedText'])) {
             $translated = $response['responseData']['translatedText'];
-            // Verifica se contém aviso de limite
             if (strpos($translated, 'MYMEMORY WARNING') === false) {
                 $translatedText .= $translated . ' ';
             } else {
-                // Se limite atingido, usa o original
                 $translatedText .= $chunk . ' ';
             }
         } else {
             $translatedText .= $chunk . ' ';
         }
     }
-    
+
     return trim($translatedText);
+}
+
+function getTranslatedDescription($game_id, $description_en) {
+    $cacheKey = 'rawg_desc_' . intval($game_id);
+    $cached = readCache($cacheKey, 86400); // 24h
+    if ($cached !== false) {
+        return $cached;
+    }
+
+    $translated = translateToPortuguese($description_en);
+    writeCache($cacheKey, $translated);
+    return $translated;
 }
 
 // --- LÓGICA PHP (MANTIDA IGUAL) ---
@@ -84,17 +124,24 @@ if (!isset($_GET['id'])) { die("Jogo não especificado."); }
 $game_id = intval($_GET['id']);
 $api_key = "5fd330b526034329a8f0d9b6676241c5";
 
-// Dados da API
-$ch = curl_init("https://api.rawg.io/api/games/$game_id?key=$api_key");
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-$game_data = json_decode(curl_exec($ch), true);
-curl_close($ch);
+// Dados da API com cache local (1h)
+$game_json = fetchUrlWithCache("https://api.rawg.io/api/games/$game_id?key=$api_key", "rawg_game_$game_id", 3600);
+$game_data = $game_json ? json_decode($game_json, true) : null;
+
+// Fallback se RAWG não responder
+if (!$game_data) {
+    $game_data = [
+        'name' => 'Desconhecido',
+        'background_image' => 'https://via.placeholder.com/500x700',
+        'description_raw' => 'Não foi possível carregar detalhes. Tente atualizar a página.'
+    ];
+}
 
 // Variáveis
 $game_name = $game_data['name'] ?? "Desconhecido";
 $game_image = $game_data['background_image'] ?? "https://via.placeholder.com/500x700";
 $description_en = $game_data['description_raw'] ?? "Sem descrição disponível.";
-$description = translateToPortuguese($description_en);
+$description = getTranslatedDescription($game_id, $description_en);
 $released = isset($game_data['released']) ? date("Y", strtotime($game_data['released'])) : "TBA";
 $full_release_date = isset($game_data['released']) ? date("d M, Y", strtotime($game_data['released'])) : "TBA";
 $developers = implode(", ", array_column($game_data['developers'] ?? [], 'name'));
@@ -126,12 +173,10 @@ if (isset($_SESSION['user_id'])) {
     $inStmt->close();
 }
 
-// Screenshots
+// Screenshots com cache local (1h)
 $screenshots = [];
-$ch_scr = curl_init("https://api.rawg.io/api/games/$game_id/screenshots?key=$api_key");
-curl_setopt($ch_scr, CURLOPT_RETURNTRANSFER, true);
-$scr_data = json_decode(curl_exec($ch_scr), true);
-curl_close($ch_scr);
+$scr_json = fetchUrlWithCache("https://api.rawg.io/api/games/$game_id/screenshots?key=$api_key", "rawg_game_screenshots_$game_id", 3600);
+$scr_data = $scr_json ? json_decode($scr_json, true) : null;
 if (isset($scr_data['results'])) $screenshots = $scr_data['results'];
 
 // Reviews BD
